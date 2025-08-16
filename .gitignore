@@ -1,0 +1,118 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments (your .venv folder)
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+conda-meta/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Model Files (these can be very large)
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.ckpt
+*.pth
+*.pt
+*.bin
+*.safetensors
+models/
+checkpoints/
+saved_models/
+
+# Data Files (often large and sensitive)
+data/
+datasets/
+*.csv
+*.json
+*.parquet
+*.xlsx
+*.tsv
+raw_data/
+processed_data/
+
+# ML Experiment Tracking
+mlruns/
+.mlflow/
+wandb/
+tensorboard_logs/
+logs/
+experiments/
+
+# Environment and Config Files
+.env
+.env.local
+.env.*.local
+config.ini
+secrets.json
+api_keys.txt
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Cache and Temporary Files
+.cache/
+*.log
+*.tmp
+temp/
+tmp/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Transformers Cache (Hugging Face models)
+.cache/huggingface/
+transformers_cache/
+
+# FastAPI/Web App
+__pycache__/
+.uvicorn/
+
+# Docker
+Dockerfile.prod
+docker-compose.override.yml
