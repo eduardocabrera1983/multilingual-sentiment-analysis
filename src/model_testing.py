@@ -143,7 +143,7 @@ class ModelTester:
         
         try:
             # Load sample data
-            df = pd.read_csv('data/sample_business_feedback.csv')
+            df = pd.read_csv('data/fedex_reviews_YYYYMMDD_HHMM.csv')
             print(f"Loaded {len(df)} sample reviews")
             
             # Test first 5 samples
