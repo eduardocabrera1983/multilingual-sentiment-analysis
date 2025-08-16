@@ -2,11 +2,14 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Transformers](https://img.shields.io/badge/🤗-transformers-orange.svg)](https://huggingface.co/transformers/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Portfolio Showcase](https://img.shields.io/badge/License-Portfolio%20Showcase%20Only-red.svg)](https://github.com/eduardocabrera1983/multilingual-sentiment-analysis/blob/main/LICENSE)
 
-> **🔗 Repository**: https://github.com/eduardocabrera1983/multilingual-sentiment-analysis
+> **🔗 Repository**: https://github.com/eduardocabrera1983/multilingual-sentiment-analysis  
+> **👁️ Portfolio Showcase**: This repository demonstrates Eduardo Cabrera's ML/AI capabilities - **Viewing Only**
 
 ## 🎯 Project Overview
+
+> **📋 PORTFOLIO SHOWCASE**: This project demonstrates advanced machine learning and software engineering capabilities. The repository is provided for **viewing and assessment purposes only** to showcase technical skills in multilingual NLP, transformer models, and production ML systems.
 
 This project implements a comprehensive **multilingual sentiment analysis system** that analyzes customer feedback across multiple languages using advanced neural network architectures. The system performs both **overall sentiment classification** (positive/negative/neutral) and **aspect-based analysis** focusing on product quality and user experience.
 
@@ -39,64 +42,27 @@ This project implements a comprehensive **multilingual sentiment analysis system
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-## 🚀 Quick Start
+## 👀 Portfolio Review Guide
 
-### Prerequisites
+> **Note**: This repository is for **portfolio demonstration only**. The code is provided to showcase technical capabilities and is not licensed for use.
 
-```bash
-Python 3.8+
-PyTorch 1.9+
-CUDA (optional, for GPU acceleration)
-```
+### 🔍 **Key Areas to Review:**
 
-### Installation
+1. **📁 Architecture**: Examine the clean, modular project structure
+2. **🧠 ML Models**: Review sophisticated ensemble approaches in `src/models/`
+3. **🔧 Pipeline**: Analyze production-ready integration in `src/integrated_ml_pipeline.py`
+4. **📊 Data Processing**: Study comprehensive data preparation techniques
+5. **🌐 Web Application**: Explore full-stack implementation
+6. **📋 Documentation**: Assess professional documentation standards
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/eduardocabrera1983/multilingual-sentiment-analysis.git
-cd multilingual-sentiment-analysis
-```
+### 💼 **Technical Skills Demonstrated:**
 
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-3. **Download required models**
-```bash
-python setup_models.py
-```
-
-4. **Run initial tests**
-```bash
-python test_setup.py
-```
-
-### Basic Usage
-
-```python
-from src.integrated_ml_pipeline import IntegratedMLPipeline
-
-# Initialize the pipeline
-pipeline = IntegratedMLPipeline()
-
-# Analyze single text
-result = pipeline.analyze_text(
-    "This product has excellent quality but the interface is confusing",
-    language="en"
-)
-
-print(f"Sentiment: {result['sentiment']} ({result['sentiment_confidence']:.3f})")
-print(f"Aspect: {result['aspect']} ({result['aspect_confidence']:.3f})")
-
-# Batch analysis
-texts = [
-    "Great product quality!",
-    "La interfaz es muy confusa",
-    "Sehr benutzerfreundlich"
-]
-results = pipeline.analyze_batch(texts)
-```
+- **Machine Learning**: Transformer models, ensemble methods, multilingual NLP
+- **Software Engineering**: Clean architecture, modular design, error handling
+- **Data Science**: Data preprocessing, feature engineering, performance evaluation
+- **MLOps**: Model versioning, monitoring, deployment pipelines
+- **Web Development**: Streamlit applications, API design
+- **DevOps**: Docker containerization, cloud deployment strategies
 
 ## 📁 Project Structure
 
@@ -417,28 +383,54 @@ tester.run_experiment(
 )
 ```
 
-## 🤝 Contributing
+## 💼 Professional Inquiries
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+### 🤝 **Employment & Collaboration**
+Interested in my machine learning and software development capabilities? 
 
-### Development Workflow
+### 📧 **Contact Eduardo Cabrera:**
+- **Email**: edumcabrera@gmail.com
+- **Repository**: https://github.com/eduardocabrera1983/multilingual-sentiment-analysis
+- **LinkedIn**: [Connect for professional opportunities]
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request at https://github.com/eduardocabrera1983/multilingual-sentiment-analysis
+### 🚀 **Available for:**
+- **Full-time ML/AI Engineering positions**
+- **Consulting on multilingual NLP projects**  
+- **Contract development for similar systems**
+- **Technical advisory and architecture design**
+- **Training and knowledge transfer**
 
-### Code Standards
+### 💡 **Custom Development:**
+This portfolio showcases the ability to build sophisticated ML systems. 
+Similar custom solutions can be developed for your specific business needs.
 
-- **Python**: Follow PEP 8
-- **Documentation**: Docstrings for all functions
-- **Testing**: Minimum 80% code coverage
-- **Type Hints**: Use type annotations
+## 📄 License & Usage Rights
 
-## 📄 License
+This project is licensed under a **Portfolio Showcase License**.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### 👁️ **What You CAN Do:**
+- **View code** for employment/assessment purposes
+- **Review implementation** to evaluate technical skills  
+- **Examine methodology** for educational assessment
+- **Assess capabilities** for hiring or collaboration
+
+### ❌ **What You CANNOT Do:**
+- Copy, use, or implement any portion of the code
+- Run or execute the software
+- Create derivative works or modifications
+- Use for personal, academic, or commercial projects
+- Distribute or share the codebase
+
+### 📧 **Contact for Licensing:**
+For any use beyond portfolio review: **edumcabrera@gmail.com**
+
+**This repository demonstrates Eduardo Cabrera's expertise in:**
+- 🤖 Advanced ML/NLP Systems
+- 🌍 Multilingual AI Applications  
+- 🔧 Production-Ready Software Development
+- 📊 MLOps and System Architecture
+
+See [LICENSE](LICENSE) for complete terms.
 
 ## 🎓 Citations
 
@@ -459,11 +451,14 @@ If you use this project in your research, please cite:
 - [Aspect-Based Sentiment Analysis Survey](https://arxiv.org/abs/1909.02859)
 - [Multilingual BERT](https://arxiv.org/abs/1810.04805)
 
-## 📞 Support
+## 📞 Professional Contact
 
-- **Issues**: [GitHub Issues](https://github.com/eduardocabrera1983/multilingual-sentiment-analysis/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/eduardocabrera1983/multilingual-sentiment-analysis/discussions)
-- **Email**: eduardo.cabrera@domain.com
+### 📧 **Eduardo Cabrera**
+- **Email**: edumcabrera@gmail.com
+- **Portfolio**: https://github.com/eduardocabrera1983/multilingual-sentiment-analysis
+- **Purpose**: Employment, consulting, or licensing inquiries
+
+> **Note**: This is a portfolio showcase repository. For questions about the code or potential collaboration opportunities, please contact directly via email.
 
 ## 🏆 Acknowledgments
 
@@ -490,6 +485,7 @@ If you use this project in your research, please cite:
 
 ---
 
-**⭐ Star this repo if you find it useful!**
+**⭐ Interested in my ML/AI capabilities? Let's connect!**
 
-*Created by Eduardo Cabrera - Last updated: August 2025*
+*Portfolio Showcase by Eduardo Cabrera - August 2025*  
+*Demonstrating advanced machine learning and software engineering expertise*
