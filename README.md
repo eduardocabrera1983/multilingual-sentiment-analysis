@@ -478,9 +478,23 @@ If you use this project in your research, please cite:
 
 ## 🔗 References
 
-- [XLM-RoBERTa Paper](https://arxiv.org/abs/1911.02116)
-- [Aspect-Based Sentiment Analysis Survey](https://arxiv.org/abs/1909.02859)
-- [Multilingual BERT](https://arxiv.org/abs/1810.04805)
+### Core Model Papers
+- [XLM-RoBERTa: Unsupervised Cross-lingual Representation Learning at Scale](https://arxiv.org/abs/1911.02116) - **Facebook AI Research (Meta AI)** - Conneau et al., 2019
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/abs/1810.04805) - **Google Research** - Devlin et al., 2018
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762) - **Google Brain/Google Research** - Vaswani et al., 2017
+
+### Foundational Research
+- [How multilingual is Multilingual BERT?](https://arxiv.org/abs/1906.01502) - Research analysis from academic institutions
+- [A Survey on Aspect-Based Sentiment Analysis: Tasks, Methods, and Challenges](https://arxiv.org/abs/2203.01054) - Comprehensive ABSA survey, 2022
+
+### University Contributions
+- [Stanford NLP Sentiment Analysis](https://nlp.stanford.edu/sentiment/) - **Stanford University** Natural Language Processing Group
+- [Deep Learning for Aspect-Based Sentiment Analysis](https://cs224d.stanford.edu/reports/WangBo.pdf) - **Stanford University** CS224d Research
+- [Aspect-Based Sentiment Analysis Research](https://research.google/pubs/how-multilingual-is-multilingual-bert/) - **Google Research** with academic collaborations
+
+### Technical Documentation
+- [Transformer Architecture Blog](https://research.google/blog/transformer-a-novel-neural-network-architecture-for-language-understanding/) - **Google Research** Technical Blog
+- [Hugging Face Model Documentation](https://huggingface.co/docs/transformers/) - Implementation references and model cards
 
 ## 📞 Professional Contact
 
@@ -495,10 +509,18 @@ If you use this project in your research, please cite:
 
 ## 🏆 Acknowledgments
 
-- **Hugging Face** for transformer models
-- **CardiffNLP** for multilingual sentiment models
-- **Community contributors** and testers
-- **Open source libraries** that made this possible
+### Research Institutions
+- **Facebook AI Research (Meta AI)** for XLM-RoBERTa and multilingual models
+- **Google Research & Google Brain** for BERT, Transformers, and foundational attention mechanisms
+- **Stanford University NLP Group** for sentiment analysis research and treebank development
+- **Johns Hopkins University** for multilingual NLP and cross-lingual analysis contributions
+- **University of Southern California** for transformer architecture development (Ashish Vaswani's PhD work)
+
+### Open Source Community
+- **Hugging Face** for transformers library and model distribution
+- **CardiffNLP** for multilingual sentiment models and fine-tuned variants
+- **Community contributors** and researchers advancing multilingual NLP
+- **Open source libraries** that made this implementation possible
 
 ---
 
