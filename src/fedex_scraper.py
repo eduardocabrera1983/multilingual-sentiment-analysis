@@ -21,7 +21,7 @@ except ImportError:
     print("⚠️ langdetect not installed. Install with: pip install langdetect")
 
 class FedExReviewAnalyzer:
-    def __init__(self, data_dir="data"):
+    def __init__(self, data_dir="../data"):
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
         
@@ -86,7 +86,7 @@ class FedExReviewAnalyzer:
             }
         }
     
-    def scrape_fedex_reviews(self, count=500, countries=['us', 'es', 'de', 'fr', 'nl']):
+    def scrape_fedex_reviews(self, count=1000, countries=['us', 'es', 'de', 'fr', 'nl']):
         """Scrape FedEx app reviews using google-play-scraper"""
         if not SCRAPER_AVAILABLE:
             print("❌ google-play-scraper not available. Creating sample data...")
@@ -327,7 +327,7 @@ class FedExReviewAnalyzer:
         
         return sample_reviews
     
-    def analyze_fedex_reviews(self, count=500):
+    def analyze_fedex_reviews(self, count=1000):
         """Main function to scrape and analyze FedEx reviews"""
         print("🚀 Starting FedEx review analysis...")
         print(f"📱 Target app: {self.fedex_app_id}")
@@ -421,7 +421,7 @@ if __name__ == "__main__":
     print("📱 Analyzing FedEx Mobile App Reviews")
     print("🔗 App: https://play.google.com/store/apps/details?id=com.fedex.ida.android")
     
-    df = analyzer.analyze_fedex_reviews(count=500)
+    df = analyzer.analyze_fedex_reviews(count=1000)
     
     if df is not None:
         print("\n🎉 FedEx analysis complete!")
