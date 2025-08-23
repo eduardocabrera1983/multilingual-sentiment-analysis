@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Pure Multi-Label Model Testing - FINAL VERSION
+Save as: src/model_testing.py
 
+Clean implementation testing only multi-label aspect classification
 """
 
 import pandas as pd
@@ -135,8 +137,8 @@ class PureMultiLabelModelTester:
             },
             {
                 'text': "not receiving email for sign in, this app continues to be trash!",
-                'expected_type': 'single_aspect',
-                'expected_primary': 'performance', 
+                'expected_type': 'dual_aspect',
+                'expected_primary': 'user_experience', 
                 'description': 'Real FedEx sample - Authentication + General dissatisfaction'
             }
         ]

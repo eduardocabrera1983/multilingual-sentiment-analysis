@@ -11,3 +11,4 @@ seaborn==0.12.0
 matplotlib==3.7.0
 openpyxl==3.1.0
 langdetect==1.0.9
+google-play-scraper==1.2.7
