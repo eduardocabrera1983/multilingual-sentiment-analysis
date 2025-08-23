@@ -831,7 +831,6 @@ class MultiLabel3DVisualizer:
             print(f"      {file}")
         
         print(f"\n🌟 3D Analysis Complete!")
-        print(f"🎯 Perfect for your bootcamp presentation!")
         print(f"📱 Open the HTML files in your browser to interact with 3D visualizations")
         
         return {
@@ -866,7 +865,6 @@ def main():
     )
     
     print("\n🎉 3D Multi-Label Visualization System Ready!")
-    print("\n📋 For Your Bootcamp Presentation:")
     print("   1. Open the generated HTML files in your browser")
     print("   2. Demonstrate the interactive 3D capabilities") 
     print("   3. Show multi-label classification in 3D space")
