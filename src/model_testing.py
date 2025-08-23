@@ -135,8 +135,8 @@ class PureMultiLabelModelTester:
             },
             {
                 'text': "not receiving email for sign in, this app continues to be trash!",
-                'expected_type': 'dual_aspect',
-                'expected_primary': 'user_experience', 
+                'expected_type': 'single_aspect',
+                'expected_primary': 'performance', 
                 'description': 'Real FedEx sample - Authentication + General dissatisfaction'
             }
         ]

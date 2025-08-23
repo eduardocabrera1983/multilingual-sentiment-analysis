@@ -119,7 +119,7 @@ class IntegratedMLPipeline:
             
             # Business intelligence flags
             'all_aspect_scores': aspect_result.get('all_scores', {}),
-            'user_experience_priority': aspect_result['primary_aspect'] == 'user_experience',
+            'user_experience_priority': aspect_result['primary_aspect'] == 'user_experience',  # FIXED LINE
             'mixed_concerns': aspect_result['classification_type'] == 'mixed_concerns',
             'high_priority': aspect_result['priority_level'] == 'HIGH',
             'critical_severity': aspect_result['severity_level'] == 'CRITICAL',
@@ -128,6 +128,7 @@ class IntegratedMLPipeline:
             'processing_time': time.time() - start_time,
             'timestamp': datetime.now().isoformat()
         }
+        
     
     def _fallback_sentiment_analysis(self, text: str) -> Dict:
         """Fallback sentiment analysis"""

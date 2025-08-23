@@ -484,7 +484,6 @@ if __name__ == "__main__":
         
         print(f"\n🎤 PRESENTATION DEMO:")
         print(f"   Your system demonstrates sophisticated ML concepts")
-        print(f"   Perfect for impressing bootcamp instructors")
         print(f"   Shows real-world business application")
         
     else:
