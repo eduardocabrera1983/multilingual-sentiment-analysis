@@ -19,8 +19,8 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 try:
-    from models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
-    from models.enhanced_aspect_classifier import EnhancedAspectClassifier
+    from src.models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
+    from src.models.enhanced_aspect_classifier import EnhancedAspectClassifier
 except ImportError:
     print("⚠️ Could not import enhanced models, using fallback")
     EnhancedSentimentClassifier = None
