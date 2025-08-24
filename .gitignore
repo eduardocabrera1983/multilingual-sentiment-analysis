@@ -47,7 +47,7 @@ conda-meta/
 *.pt
 *.bin
 *.safetensors
-models/
+#models/
 checkpoints/
 saved_models/
 
