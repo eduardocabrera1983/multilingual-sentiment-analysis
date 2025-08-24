@@ -178,7 +178,7 @@ class CompleteTestingSuite:
         
         # Test Integrated ML Pipeline import
         try:
-            from src.integrated_ml_pipeline import IntegratedMLPipeline
+            from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
             self.pipelines['integrated_class'] = IntegratedMLPipeline
             print_colored("✅ Integrated ML Pipeline imported successfully", Colors.GREEN)
         except Exception as e:
