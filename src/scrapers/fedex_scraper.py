@@ -8,14 +8,10 @@ import sys
 from pathlib import Path
 from collections import Counter
 
-# Fix the import path for your specific directory structure
+# Simplified import path setup
 current_dir = Path(__file__).parent
-project_root = current_dir.parent.parent  # Go up to multilingual-sentiment-analysis
-sys.path.insert(0, str(project_root))
-
-# Add src directory to path so we can import from models
-src_dir = project_root / 'src'
-sys.path.insert(0, str(src_dir))
+project_root = current_dir.parent.parent
+sys.path.insert(0, str(project_root / 'src'))
 
 try:
     from google_play_scraper import app, reviews, Sort
@@ -32,7 +28,7 @@ except ImportError:
     LANGDETECT_AVAILABLE = False
     print("⚠️ langdetect not installed. Install with: pip install langdetect")
 
-# Import the enhanced models - they're in src/models/
+# Import the enhanced models
 try:
     from models.enhanced_aspect_classifier import EnhancedAspectClassifier
     from models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
@@ -41,17 +37,13 @@ try:
 except ImportError as e:
     ENHANCED_MODELS_AVAILABLE = False
     print(f"⚠️ Enhanced models not available: {e}")
-    print("Looking for models in: src/models/")
-    print(f"Current path: {src_dir}")
     
-    # Try alternative import
+    # Try alternative direct import
     try:
-        import sys
         import importlib.util
         
-        # Direct file import as fallback
-        aspect_path = src_dir / 'models' / 'enhanced_aspect_classifier.py'
-        sentiment_path = src_dir / 'models' / 'enhanced_sentiment_classifier.py'
+        aspect_path = project_root / 'src' / 'models' / 'enhanced_aspect_classifier.py'
+        sentiment_path = project_root / 'src' / 'models' / 'enhanced_sentiment_classifier.py'
         
         if aspect_path.exists() and sentiment_path.exists():
             # Load aspect classifier
@@ -69,9 +61,7 @@ except ImportError as e:
             ENHANCED_MODELS_AVAILABLE = True
             print("✅ Enhanced models loaded via direct import")
         else:
-            print(f"❌ Model files not found at expected locations:")
-            print(f"   {aspect_path}")
-            print(f"   {sentiment_path}")
+            print(f"❌ Model files not found at expected locations")
     except Exception as e2:
         print(f"❌ Alternative import also failed: {e2}")
 
@@ -79,10 +69,7 @@ class FedExReviewAnalyzer:
     def __init__(self, data_dir=None, use_enhanced_models=True):
         # Set data directory to project root's data folder
         if data_dir is None:
-            # Navigate to the project's main data folder
-            current_file = Path(__file__)
-            # Go up from scrapers to src, then to project root
-            project_root = current_file.parent.parent.parent  # multilingual-sentiment-analysis
+            project_root = Path(__file__).parent.parent.parent
             data_dir = str(project_root / 'data')
             print(f"📁 Data will be saved to: {data_dir}")
         
@@ -105,7 +92,11 @@ class FedExReviewAnalyzer:
             self.aspect_classifier = None
             self.sentiment_classifier = None
         
-        # Sample review templates for all 6 aspects from enhanced model
+        # Initialize review templates for all 6 aspects
+        self._initialize_review_templates()
+    
+    def _initialize_review_templates(self):
+        """Initialize review templates for sample data generation"""
         self.aspect_review_templates = {
             'user_experience': {
                 'positive': [
@@ -252,8 +243,7 @@ class FedExReviewAnalyzer:
                 ]
             }
         }
-        # __init__ ends here - no return statement!
-    
+
     def scrape_fedex_reviews_adaptive(self, target_count=1000, countries=['us', 'es', 'de', 'fr', 'nl']):
         """
         Scrape REAL FedEx app reviews, extending timeline as needed to reach target count
@@ -405,249 +395,8 @@ class FedExReviewAnalyzer:
         
         return all_reviews
     
-    def scrape_fedex_reviews(self, count=1000, countries=['us', 'es', 'de', 'fr', 'nl'], 
-                            months_back=3, filter_date=True, real_only=True):
-        """
-        Original scraping method with date filtering (kept for backward compatibility)
-        """
-        # Calculate date cutoff for filtering
-        cutoff_date = datetime.now() - timedelta(days=months_back * 30)
-        
-        if not SCRAPER_AVAILABLE:
-            if real_only:
-                print("❌ google-play-scraper not available. Cannot get real reviews.")
-                print("💡 Install with: pip install google-play-scraper")
-                return []
-            else:
-                print("❌ google-play-scraper not available. Creating enhanced sample data...")
-                print(f"📅 Generating reviews from last {months_back} months (after {cutoff_date.strftime('%Y-%m-%d')})")
-                return self.create_enhanced_sample_data(count, cutoff_date=cutoff_date if filter_date else None)
-        
-        all_reviews = []
-        target_per_country = count // len(countries)
-        
-        print(f"🎯 Target: Up to {count} REAL reviews ({target_per_country} per country)")
-        if filter_date:
-            print(f"📅 Filter: Last {months_back} months (after {cutoff_date.strftime('%Y-%m-%d')})")
-        print(f"⚠️ Real-only mode: Will return actual available reviews (may be less than {count})")
-        
-        for country in countries:
-            try:
-                print(f"🌍 Scraping FedEx reviews from {country.upper()}...")
-                
-                # Language mapping
-                lang_map = {
-                    'us': 'en', 'es': 'es', 'de': 'de', 
-                    'fr': 'fr', 'nl': 'nl'
-                }
-                lang = lang_map.get(country, 'en')
-                
-                # Get reviews using google-play-scraper
-                result, continuation_token = reviews(
-                    self.fedex_app_id,
-                    lang=lang,
-                    country=country.upper(),
-                    sort=Sort.NEWEST,
-                    count=500  # Max we can get
-                )
-                
-                country_reviews = []
-                filtered_count = 0
-                
-                for review in result:
-                    review_date = review.get('at', datetime.now())
-                    
-                    # Filter by date if enabled
-                    if filter_date and review_date < cutoff_date:
-                        filtered_count += 1
-                        continue
-                    
-                    # Detect language if possible
-                    detected_lang = self.detect_language(review.get('content', ''))
-                    
-                    # Only include reviews with content
-                    if review.get('content', '').strip():
-                        country_reviews.append({
-                            'app_id': self.fedex_app_id,
-                            'text': review.get('content', ''),
-                            'rating': review.get('score', 0),
-                            'date': review_date,
-                            'date_str': review_date.strftime('%Y-%m-%d'),
-                            'days_ago': (datetime.now() - review_date).days,
-                            'country': country,
-                            'language_detected': detected_lang,
-                            'language_expected': lang,
-                            'helpful_count': review.get('thumbsUpCount', 0),
-                            'user': review.get('userName', 'Anonymous'),
-                            'is_recent': True,
-                            'is_real': True
-                        })
-                
-                if filter_date and filtered_count > 0:
-                    print(f"  📅 Filtered out {filtered_count} reviews older than {months_back} months")
-                
-                all_reviews.extend(country_reviews)
-                print(f"✅ Got {len(country_reviews)} REAL recent reviews from {country}")
-                
-                # NO SYNTHETIC DATA when real_only=True
-                if not real_only and len(country_reviews) < target_per_country:
-                    shortage = target_per_country - len(country_reviews)
-                    print(f"  📝 Generating {shortage} additional samples for {country}")
-                    samples = self.create_country_enhanced_samples(
-                        country, shortage, cutoff_date=cutoff_date
-                    )
-                    all_reviews.extend(samples)
-                
-                time.sleep(2)
-                
-            except Exception as e:
-                print(f"❌ Error scraping {country}: {e}")
-                continue
-        
-        print(f"🎉 Total collected: {len(all_reviews)} REAL FedEx reviews")
-        return all_reviews
-        """
-        Scrape FedEx app reviews using google-play-scraper
-        
-        Args:
-            count: Target number of reviews to collect (may get less if not available)
-            countries: List of country codes to scrape from
-            months_back: Number of months to look back (default: 3)
-            filter_date: Whether to filter by date (default: True)
-            real_only: If True, only return real reviews, no synthetic data (default: True)
-        """
-        # Calculate date cutoff for filtering
-        cutoff_date = datetime.now() - timedelta(days=months_back * 30)
-        
-        if not SCRAPER_AVAILABLE:
-            if real_only:
-                print("❌ google-play-scraper not available. Cannot get real reviews.")
-                print("💡 Install with: pip install google-play-scraper")
-                return []
-            else:
-                print("❌ google-play-scraper not available. Creating enhanced sample data...")
-                print(f"📅 Generating reviews from last {months_back} months (after {cutoff_date.strftime('%Y-%m-%d')})")
-                return self.create_enhanced_sample_data(count, cutoff_date=cutoff_date if filter_date else None)
-        
-        all_reviews = []
-        target_per_country = count // len(countries)
-        
-        print(f"🎯 Target: Up to {count} REAL reviews ({target_per_country} per country)")
-        if filter_date:
-            print(f"📅 Filter: Last {months_back} months (after {cutoff_date.strftime('%Y-%m-%d')})")
-        print(f"⚠️ Real-only mode: Will return actual available reviews (may be less than {count})")
-        
-        for country in countries:
-            try:
-                print(f"🌍 Scraping FedEx reviews from {country.upper()}...")
-                
-                # Language mapping
-                lang_map = {
-                    'us': 'en', 'es': 'es', 'de': 'de', 
-                    'fr': 'fr', 'nl': 'nl'
-                }
-                lang = lang_map.get(country, 'en')
-                
-                # Get more reviews to account for date filtering
-                fetch_count = 500  # Max we can get from Google Play
-                
-                # Get reviews using google-play-scraper (always gets newest first)
-                result, continuation_token = reviews(
-                    self.fedex_app_id,
-                    lang=lang,
-                    country=country.upper(),
-                    sort=Sort.NEWEST,  # This ensures we get most recent reviews
-                    count=fetch_count,  # Google Play limits
-                )
-                
-                country_reviews = []
-                filtered_count = 0
-                
-                for review in result:
-                    review_date = review.get('at', datetime.now())
-                    
-                    # Filter by date if enabled
-                    if filter_date and review_date < cutoff_date:
-                        filtered_count += 1
-                        continue  # Skip reviews older than cutoff
-                    
-                    # Detect language if possible
-                    detected_lang = self.detect_language(review.get('content', ''))
-                    
-                    # Only include reviews with content
-                    if review.get('content', '').strip():
-                        country_reviews.append({
-                            'app_id': self.fedex_app_id,
-                            'text': review.get('content', ''),
-                            'rating': review.get('score', 0),
-                            'date': review_date,
-                            'date_str': review_date.strftime('%Y-%m-%d'),
-                            'days_ago': (datetime.now() - review_date).days,
-                            'country': country,
-                            'language_detected': detected_lang,
-                            'language_expected': lang,
-                            'helpful_count': review.get('thumbsUpCount', 0),
-                            'user': review.get('userName', 'Anonymous'),
-                            'is_recent': True,  # Mark as recent review
-                            'is_real': True  # Mark as real review
-                        })
-                
-                if filter_date and filtered_count > 0:
-                    print(f"  📅 Filtered out {filtered_count} reviews older than {months_back} months")
-                
-                all_reviews.extend(country_reviews)
-                print(f"✅ Got {len(country_reviews)} REAL recent reviews from {country}")
-                
-                # NO SYNTHETIC DATA GENERATION when real_only=True
-                if not real_only and len(country_reviews) < target_per_country:
-                    shortage = target_per_country - len(country_reviews)
-                    print(f"  📝 Generating {shortage} additional samples for {country}")
-                    samples = self.create_country_enhanced_samples(
-                        country, shortage, cutoff_date=cutoff_date
-                    )
-                    all_reviews.extend(samples)
-                
-                # Be respectful with delays
-                time.sleep(2)
-            
-            except Exception as e:
-                print(f"❌ Error scraping {country}: {e}")
-                if not real_only:
-                    # Add enhanced sample data for failed countries
-                    country_sample = self.create_country_enhanced_samples(
-                        country, target_per_country // 2, 
-                        cutoff_date=cutoff_date if filter_date else None
-                    )
-                    all_reviews.extend(country_sample)
-                    print(f"📝 Added {len(country_sample)} enhanced sample reviews for {country}")
-                continue
-        
-        print(f"🎉 Total collected: {len(all_reviews)} REAL FedEx reviews")
-        
-        # Print date distribution summary
-        if filter_date and all_reviews:
-            dates = [r['date'] for r in all_reviews]
-            oldest = min(dates)
-            newest = max(dates)
-            print(f"📅 Date range: {oldest.strftime('%Y-%m-%d')} to {newest.strftime('%Y-%m-%d')}")
-            
-            # Group by month
-            months = Counter([d.strftime('%Y-%m') for d in dates])
-            print(f"📊 Reviews by month:")
-            for month, count in sorted(months.items(), reverse=True):
-                print(f"   {month}: {count} reviews")
-        
-        return all_reviews
-    
     def create_country_enhanced_samples(self, country, count, cutoff_date=None):
-        """
-        Create enhanced sample data for a specific country with all 6 aspects
-        
-        Args:
-            country: Country code
-            count: Number of samples to generate
-            cutoff_date: Optional date cutoff for recent reviews
-        """
+        """Create enhanced sample data for a specific country with all 6 aspects"""
         lang_map = {'us': 'en', 'es': 'es', 'de': 'de', 'fr': 'fr', 'nl': 'nl'}
         lang = lang_map.get(country, 'en')
         
@@ -656,10 +405,8 @@ class FedExReviewAnalyzer:
         
         # Calculate date range for samples
         if cutoff_date:
-            # Generate dates between cutoff and now
             date_range = (datetime.now() - cutoff_date).days
         else:
-            # Default to last 90 days
             date_range = 90
             cutoff_date = datetime.now() - timedelta(days=90)
         
@@ -697,9 +444,8 @@ class FedExReviewAnalyzer:
                 rating = np.random.choice([1, 2], p=[0.6, 0.4])
             
             # Generate a realistic date within the range
-            # More recent reviews are more likely (exponential distribution)
             days_ago = int(np.random.exponential(scale=date_range/3))
-            days_ago = min(days_ago, date_range)  # Cap at date_range
+            days_ago = min(days_ago, date_range)
             review_date = datetime.now() - timedelta(days=days_ago)
             
             reviews.append({
@@ -714,7 +460,7 @@ class FedExReviewAnalyzer:
                 'language_expected': lang,
                 'helpful_count': np.random.randint(0, 50),
                 'user': f'User_{np.random.randint(1000, 9999)}',
-                'is_recent': days_ago <= 90,  # Mark if within 3 months
+                'is_recent': days_ago <= 90,
                 'is_real': False  # Mark as synthetic/fake review
             })
         
@@ -808,82 +554,12 @@ class FedExReviewAnalyzer:
             
         return reviews
     
-    def create_enhanced_sample_data(self, count=1000, cutoff_date=None):
-        """
-        Create realistic FedEx app review samples with all 6 aspects
-        
-        Args:
-            count: Number of samples to generate
-            cutoff_date: Optional date cutoff for recent reviews
-        """
-        print("📝 Creating enhanced FedEx sample review data...")
-        if cutoff_date:
-            print(f"📅 Generating reviews from after {cutoff_date.strftime('%Y-%m-%d')}")
-        
-        reviews = []
-        countries = ['us', 'es', 'de', 'fr', 'nl']
-        per_country = count // len(countries)
-        
-        for country in countries:
-            country_reviews = self.create_country_enhanced_samples(
-                country, per_country, cutoff_date=cutoff_date
-            )
-            reviews.extend(country_reviews)
-        
-        # Add some specific mixed concern examples with recent dates
-        if not cutoff_date:
-            cutoff_date = datetime.now() - timedelta(days=90)
-        
-        mixed_examples = [
-            {
-                'text': "The tracking accuracy is perfect but the app crashes constantly and the interface is terrible",
-                'rating': 2, 'country': 'us', 'language_detected': 'en',
-                'days_ago': 5
-            },
-            {
-                'text': "Love the modern design and fast performance, but delivery notifications never work properly",
-                'rating': 3, 'country': 'us', 'language_detected': 'en',
-                'days_ago': 10
-            },
-            {
-                'text': "Interface is impossible to navigate, crashes frequently, and tracking info is always wrong",
-                'rating': 1, 'country': 'us', 'language_detected': 'en',
-                'days_ago': 2
-            },
-            {
-                'text': "not receiving email for sign in, this app continues to be trash!",
-                'rating': 1, 'country': 'us', 'language_detected': 'en',
-                'days_ago': 1
-            }
-        ]
-        
-        for example in mixed_examples:
-            days_ago = example.pop('days_ago', 0)
-            review_date = datetime.now() - timedelta(days=days_ago)
-            
-            example.update({
-                'app_id': self.fedex_app_id,
-                'date': review_date,
-                'date_str': review_date.strftime('%Y-%m-%d'),
-                'days_ago': days_ago,
-                'helpful_count': np.random.randint(10, 100),
-                'user': f'User_{np.random.randint(1000, 9999)}',
-                'language_expected': example['language_detected'],
-                'is_recent': True,
-                'is_real': False  # Mark as synthetic/fake review
-            })
-            reviews.append(example)
-        
-        return reviews[:count]
-    
-    def analyze_fedex_reviews(self, count=1000, months_back=3, filter_date=True, real_only=True):
+    def analyze_fedex_reviews(self, count=1000, real_only=True):
         """
         Main function to scrape and analyze FedEx reviews with enhanced models
         
         Args:
             count: Number of reviews to collect (default: 1000)
-            months_back: Number of months to look back for reviews (default: 3) - ignored if real_only=True
-            filter_date: Whether to filter by date (default: True) - ignored if real_only=True
             real_only: If True, only collect real reviews using adaptive timeline (default: True)
         """
         print("🚀 Starting Enhanced FedEx Review Analysis...")
@@ -892,19 +568,11 @@ class FedExReviewAnalyzer:
         print(f"🤖 Enhanced Models: {'ENABLED' if self.use_enhanced_models else 'DISABLED'}")
         
         if real_only:
-            print(f"🔍 Mode: REAL REVIEWS ONLY - Adaptive timeline to reach {count} reviews")
-            # Use adaptive scraping to get target number of real reviews
+            print(f"📊 Mode: REAL REVIEWS ONLY - Adaptive timeline to reach {count} reviews")
             reviews = self.scrape_fedex_reviews_adaptive(target_count=count)
         else:
-            print(f"📅 Date Filter: Last {months_back} months" if filter_date else "📅 Date Filter: Disabled")
-            print(f"🔍 Mode: {'REAL REVIEWS ONLY' if real_only else 'Real + Synthetic Reviews'}")
-            # Use original method with date filtering
-            reviews = self.scrape_fedex_reviews(
-                count=count, 
-                months_back=months_back, 
-                filter_date=filter_date,
-                real_only=real_only
-            )
+            print("⚠️ Synthetic mode not implemented - using real reviews only")
+            reviews = self.scrape_fedex_reviews_adaptive(target_count=count)
         
         if not reviews:
             print("❌ No reviews collected")
@@ -969,27 +637,6 @@ class FedExReviewAnalyzer:
             priority_dist = df['priority_level'].value_counts()
             for priority, count in priority_dist.items():
                 print(f"  {priority}: {count} reviews ({count/len(df)*100:.1f}%)")
-            
-            print(f"\n🚨 Severity Levels:")
-            severity_dist = df['severity_level'].value_counts()
-            for severity, count in severity_dist.items():
-                print(f"  {severity}: {count} reviews ({count/len(df)*100:.1f}%)")
-            
-            # Mixed concerns analysis
-            if 'is_mixed_concern' in df.columns:
-                mixed_count = df['is_mixed_concern'].sum()
-                print(f"\n🔀 Mixed Concerns: {mixed_count} reviews ({mixed_count/len(df)*100:.1f}%)")
-            
-            # Critical issues
-            if 'is_critical' in df.columns:
-                critical_count = df['is_critical'].sum()
-                print(f"\n🚨 Critical Issues: {critical_count} reviews ({critical_count/len(df)*100:.1f}%)")
-        
-        # Sentiment by aspect matrix
-        if 'primary_aspect' in df.columns:
-            print(f"\n💡 Sentiment by Primary Aspect:")
-            sentiment_aspect = df.groupby(['primary_aspect', 'sentiment']).size().unstack(fill_value=0)
-            print(sentiment_aspect)
         
         # Sample reviews by category
         self.print_sample_reviews(df)
@@ -1028,18 +675,6 @@ class FedExReviewAnalyzer:
                 print("  ❌ Negative:")
                 for i, text in enumerate(negative_samples, 1):
                     print(f"    {i}. {text[:100]}...")
-        
-        # Mixed concerns samples
-        if 'is_mixed_concern' in df.columns:
-            mixed_samples = df[df['is_mixed_concern'] == True]['text'].head(3)
-            if len(mixed_samples) > 0:
-                print(f"\n🔀 Mixed Concerns Examples:")
-                for i, text in enumerate(mixed_samples, 1):
-                    row = df[df['text'] == text].iloc[0]
-                    primary = row['primary_aspect']
-                    secondary = row.get('secondary_aspects', [])
-                    print(f"  {i}. Primary: {primary}, Secondary: {secondary}")
-                    print(f"     {text[:100]}...")
     
     def generate_business_intelligence_report(self, df):
         """Generate business intelligence report using enhanced models"""
@@ -1072,34 +707,11 @@ class FedExReviewAnalyzer:
         for key, value in report['summary'].items():
             print(f"  {key.replace('_', ' ').title()}: {value}")
         
-        print(f"\n🎯 Classification Breakdown:")
-        for category, breakdown in report['classification_breakdown'].items():
-            print(f"  {category.replace('_', ' ').title()}:")
-            for item, count in breakdown.items():
-                print(f"    {item}: {count}")
-        
-        if report.get('mixed_concerns_patterns'):
-            print(f"\n🔀 Top Mixed Concerns Patterns:")
-            for pattern, count in report['mixed_concerns_patterns'].items():
-                print(f"  {pattern}: {count} occurrences")
-        
         if report.get('top_recommendations'):
             print(f"\n💡 Top Recommendations:")
             for i, rec in enumerate(report['top_recommendations'], 1):
                 print(f"  {i}. {rec}")
-        
-        if report.get('user_experience_insights'):
-            print(f"\n🎨 User Experience Insights:")
-            for key, value in report['user_experience_insights'].items():
-                print(f"  {key.replace('_', ' ').title()}: {value}")
-        
-        # Action items
-        critical_count = df[df.get('is_critical', False) == True].shape[0] if 'is_critical' in df.columns else 0
-        if critical_count > 0:
-            print(f"\n⚠️ IMMEDIATE ACTION REQUIRED:")
-            print(f"  {critical_count} critical issues identified")
-            print(f"  Reviews requiring immediate attention should be escalated")
-
+    
     def generate_temporal_analysis(self, df):
         """Generate temporal analysis of reviews"""
         if 'date' not in df.columns or 'days_ago' not in df.columns:
@@ -1107,40 +719,6 @@ class FedExReviewAnalyzer:
         
         print(f"\n⏰ Temporal Analysis")
         print("="*70)
-        
-        # Group by weeks
-        df['week'] = pd.to_datetime(df['date']).dt.to_period('W')
-        
-        # Reviews by week
-        print(f"\n📊 Reviews by Week:")
-        weekly_counts = df.groupby('week').size()
-        for week, count in weekly_counts.tail(12).items():  # Show last 12 weeks
-            print(f"  {week}: {count} reviews")
-        
-        # Sentiment trend over time
-        print(f"\n😊 Sentiment Trend (Last 3 Months):")
-        weekly_sentiment = df.groupby(['week', 'sentiment']).size().unstack(fill_value=0)
-        print(weekly_sentiment.tail(12))
-        
-        # Aspect trends
-        if 'primary_aspect' in df.columns:
-            print(f"\n🎯 Top Issues by Month:")
-            df['month'] = pd.to_datetime(df['date']).dt.to_period('M')
-            monthly_aspects = df.groupby(['month', 'primary_aspect']).size().unstack(fill_value=0)
-            
-            # Show top 3 aspects per month
-            for month in monthly_aspects.index[-3:]:  # Last 3 months
-                top_aspects = monthly_aspects.loc[month].nlargest(3)
-                print(f"\n  {month}:")
-                for aspect, count in top_aspects.items():
-                    print(f"    - {aspect}: {count} reviews")
-        
-        # Critical issues over time
-        if 'is_critical' in df.columns:
-            print(f"\n🚨 Critical Issues Trend:")
-            weekly_critical = df[df['is_critical']].groupby('week').size()
-            for week, count in weekly_critical.tail(8).items():
-                print(f"  {week}: {count} critical issues")
         
         # Recent vs older comparison
         recent_cutoff = 30  # Last 30 days
@@ -1169,29 +747,11 @@ if __name__ == "__main__":
     print("🔗 App: https://play.google.com/store/apps/details?id=com.fedex.ida.android")
     print("="*70)
     
-    # DEFAULT: Get 1000 REAL reviews using adaptive timeline
-    # This will automatically extend the timeline as needed to reach 1000 reviews
-    # Most recent reviews are prioritized
+    # Get 1000 REAL reviews using adaptive timeline
     df = analyzer.analyze_fedex_reviews(
         count=1000,      # Target: 1000 real reviews
         real_only=True   # ONLY REAL REVIEWS - uses adaptive timeline
     )
-    
-    # Alternative options (uncomment to use):
-    
-    # Option 1: Get MORE real reviews (if available)
-    # df = analyzer.analyze_fedex_reviews(
-    #     count=1500,      # Try to get 1500 real reviews
-    #     real_only=True
-    # )
-    
-    # Option 2: Get reviews from specific time period only
-    # df = analyzer.analyze_fedex_reviews(
-    #     count=1000,
-    #     months_back=3,
-    #     filter_date=True,
-    #     real_only=False  # This uses the old method with date filtering
-    # )
     
     if df is not None:
         print("\n🎉 FedEx analysis complete!")
@@ -1202,24 +762,14 @@ if __name__ == "__main__":
         if 'is_real' in df.columns:
             real_count = df['is_real'].sum()
             print(f"   ✅ Verified real reviews: {real_count}")
-            if real_count < len(df):
-                print(f"   ⚠️ Synthetic reviews: {len(df) - real_count}")
         
         if 'days_ago' in df.columns:
             print(f"\n📅 Timeline Coverage:")
             print(f"   Most recent: {df['days_ago'].min()} days ago")
             print(f"   Oldest: {df['days_ago'].max()} days ago")
             print(f"   Average age: {df['days_ago'].mean():.1f} days")
-            
-            # Show distribution
-            recent_30 = (df['days_ago'] <= 30).sum()
-            recent_90 = (df['days_ago'] <= 90).sum()
-            print(f"\n📊 Recency Breakdown:")
-            print(f"   Last 30 days: {recent_30} reviews ({recent_30/len(df)*100:.1f}%)")
-            print(f"   Last 90 days: {recent_90} reviews ({recent_90/len(df)*100:.1f}%)")
         
         print("\n✅ All reviews are REAL - no synthetic data!")
-        print("✅ Reviews prioritized by recency (newest first)")
         print("🚀 Ready for analysis and ML pipeline!")
     else:
         print("❌ Analysis failed")
