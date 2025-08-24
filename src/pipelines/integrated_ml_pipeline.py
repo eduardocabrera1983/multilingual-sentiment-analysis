@@ -441,7 +441,7 @@ class IntegratedMLPipeline:
             'backward_compatible': False,
             'features': [
                 'Multi-label aspect classification',
-                'User experience prioritization',
+                'User experience prioritization', 
                 'Mixed concerns detection',
                 'Business priority levels',
                 'Severity assessment',
@@ -449,7 +449,11 @@ class IntegratedMLPipeline:
                 'Business intelligence reporting'
             ],
             'output_format': 'New multi-label format with primary_aspect + secondary_aspects',
-            'suitable_for': 'Advanced data science projects and presentations'
+            'suitable_for': 'Advanced data science projects and presentations',
+            'models_loaded': {
+                'sentiment_classifier': hasattr(self, 'sentiment_classifier'),
+                'aspect_classifier': hasattr(self, 'aspect_classifier')
+            }
         }
 
 # Example usage and testing

@@ -71,7 +71,7 @@ def test_with_enhanced_models(sentiment_classifier, aspect_classifier):
         sentiment_result = sentiment_classifier.analyze_sentiment(text)
         
         # Analyze aspect with enhanced model  
-        aspect_result = aspect_classifier.classify_aspect(text)
+        aspect_result = aspect_classifier.classify_aspects_multilabel(text)
         
         print(f"   🤖 Enhanced Results:")
         print(f"      Sentiment: {sentiment_result['sentiment']} ({sentiment_result['confidence']:.3f})")
