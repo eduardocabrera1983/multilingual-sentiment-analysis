@@ -13,6 +13,12 @@ current_dir = Path(__file__).parent
 project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root / 'src'))
 
+def safe_strip(text, default=""):
+    """Safely strip text, handling None values"""
+    if text is None:
+        return default
+    return str(text).strip()
+
 try:
     from google_play_scraper import app, reviews, Sort
     SCRAPER_AVAILABLE = True
@@ -310,14 +316,14 @@ class FedExReviewAnalyzer:
                 # Process all reviews from this country
                 for review in result:
                     # Detect language if possible
-                    detected_lang = self.detect_language(review.get('content', ''))
+                    detected_lang = self.detect_language(safe_strip(review.get('content')))
                     
                     # Only include reviews with content
-                    if review.get('content', '').strip():
+                    if safe_strip(review.get('content')):
                         review_date = review.get('at', datetime.now())
                         country_reviews.append({
                             'app_id': self.fedex_app_id,
-                            'text': review.get('content', ''),
+                            'text': safe_strip(review.get('content')),
                             'rating': review.get('score', 0),
                             'date': review_date,
                             'date_str': review_date.strftime('%Y-%m-%d'),
@@ -326,7 +332,7 @@ class FedExReviewAnalyzer:
                             'language_detected': detected_lang,
                             'language_expected': lang,
                             'helpful_count': review.get('thumbsUpCount', 0),
-                            'user': review.get('userName', 'Anonymous'),
+                            'user': safe_strip(review.get('userName', 'Anonymous')),
                             'is_recent': (datetime.now() - review_date).days <= 90,
                             'is_real': True  # All are real reviews
                         })

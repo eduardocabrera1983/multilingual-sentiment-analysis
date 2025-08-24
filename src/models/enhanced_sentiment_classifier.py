@@ -60,23 +60,24 @@ class EnhancedSentimentClassifier:
             return 'cuda'
         return 'cpu'
     
+  
     def _load_models_gpu_optimized(self):
-        """Load models optimized for GPU execution - FIXED VERSION"""
+        """Load models optimized for GPU execution - FIXED FOR XLM-RoBERTa HANGING"""
         
         # Model configurations
         model_configs = [
             {
                 'name': 'distilbert_multilingual',
                 'model_id': 'lxyuan/distilbert-base-multilingual-cased-sentiments-student',
-                'weight': 0.5,
+                'weight': 1.0,
                 'primary': True
             },
-            {
-                'name': 'xlm_roberta_base',
-                'model_id': 'cardiffnlp/twitter-xlm-roberta-base-sentiment',
-                'weight': 0.5,
-                'primary': False
-            }
+            # {
+            #     'name': 'xlm_roberta_base',
+            #     'model_id': 'cardiffnlp/twitter-xlm-roberta-base-sentiment',
+            #     'weight': 0.5,
+            #     'primary': False
+            # }
         ]
         
         if not self.use_ensemble:
@@ -91,18 +92,79 @@ class EnhancedSentimentClassifier:
                 print(f"\n⏳ Loading {config['name']}...")
                 start_time = time.time()
                 
-                # FIXED: Proper GPU loading without conflicting parameters
+                # FIXED: Progressive fallback approach for problematic XLM-RoBERTa
                 if self.device == 'cuda':
-                    # GPU-optimized loading with FP16
-                    model = pipeline(
-                        'sentiment-analysis',
-                        model=config['model_id'],
-                        device=0,  # GPU 0
-                        torch_dtype=torch.float16  # FP16 for faster inference
-                        # Removed model_kwargs to avoid conflict
-                    )
+                    model = None
+                    loading_methods = [
+                        # Method 1: Try FP16 first
+                        lambda: pipeline(
+                            'sentiment-analysis',
+                            model=config['model_id'],
+                            device=0,
+                            torch_dtype=torch.float16
+                        ),
+                        # Method 2: Try FP32 if FP16 fails/hangs
+                        lambda: pipeline(
+                            'sentiment-analysis',
+                            model=config['model_id'],
+                            device=0
+                            # No torch_dtype = uses default FP32
+                        ),
+                        # Method 3: CPU fallback
+                        lambda: pipeline(
+                            'sentiment-analysis',
+                            model=config['model_id'],
+                            device=-1
+                        )
+                    ]
+                    
+                    # Try each loading method with timeout
+                    import threading
+                    import queue
+                    
+                    for i, method in enumerate(loading_methods):
+                        method_name = ['FP16', 'FP32', 'CPU'][i]
+                        print(f"   🔄 Attempting {method_name} loading...")
+                        
+                        result_queue = queue.Queue()
+                        
+                        def load_with_method():
+                            try:
+                                model_result = method()
+                                result_queue.put(('success', model_result))
+                            except Exception as e:
+                                result_queue.put(('error', str(e)))
+                        
+                        # Start loading in separate thread
+                        thread = threading.Thread(target=load_with_method)
+                        thread.daemon = True
+                        thread.start()
+                        
+                        # Wait for result with timeout (30s for GPU, 60s for CPU)
+                        timeout = 60 if method_name == 'CPU' else 30
+                        thread.join(timeout=timeout)
+                        
+                        if thread.is_alive():
+                            print(f"   ⏰ {method_name} timed out after {timeout}s")
+                            continue  # Try next method
+                        
+                        try:
+                            status, result = result_queue.get_nowait()
+                            if status == 'success':
+                                model = result
+                                print(f"   ✅ Loaded with {method_name}")
+                                break
+                            else:
+                                print(f"   ❌ {method_name} failed: {result[:50]}")
+                        except queue.Empty:
+                            print(f"   ❌ {method_name} failed (no result)")
+                            continue
+                    
+                    if model is None:
+                        print(f"   ⚠️ All methods failed for {config['name']}, skipping")
+                        continue
                 else:
-                    # CPU fallback
+                    # CPU mode (no issues here)
                     model = pipeline(
                         'sentiment-analysis',
                         model=config['model_id'],
@@ -121,7 +183,7 @@ class EnhancedSentimentClassifier:
                 successful_loads += 1
                 print(f"✅ {config['name']} loaded in {load_time:.1f}s")
                 
-                if self.device == 'cuda':
+                if self.device == 'cuda' and model.device != torch.device('cpu'):
                     # Show GPU memory usage
                     allocated = torch.cuda.memory_allocated() / 1024**3
                     reserved = torch.cuda.memory_reserved() / 1024**3
@@ -135,7 +197,6 @@ class EnhancedSentimentClassifier:
                     successful_loads += 1
         
         if successful_loads == 0:
-            # Ultimate fallback
             print("\n⚠️ All models failed, using lightweight fallback...")
             self._load_simple_fallback()
         
@@ -147,39 +208,35 @@ class EnhancedSentimentClassifier:
                     self.models[name]['weight'] /= total_weight
         
         print(f"\n✅ Sentiment classifier ready with {len(self.models)} model(s)!")
-    
+
+    # Also add these helper methods if they don't exist:
     def _load_fallback_model(self):
-        """Load lightweight fallback model"""
+        """Load a simple fallback model when main models fail"""
         try:
-            print("Loading DistilBERT fallback...")
-            device_id = 0 if self.device == 'cuda' else -1
-            
-            fallback = pipeline(
-                'sentiment-analysis',
-                model='distilbert-base-uncased-finetuned-sst-2-english',
-                device=device_id
-            )
-            
+            model = pipeline('sentiment-analysis', model='distilbert-base-uncased-finetuned-sst-2-english', device=-1)
             self.models['fallback'] = {
-                'pipeline': fallback,
+                'pipeline': model,
                 'weight': 1.0,
                 'primary': True,
-                'model_id': 'distilbert-fallback'
+                'model_id': 'distilbert-base-uncased-finetuned-sst-2-english'
             }
-            print("✅ Fallback model loaded")
-            
+            print("✅ Fallback model loaded successfully")
         except Exception as e:
-            print(f"❌ Fallback also failed: {e}")
-    
+            print(f"❌ Even fallback model failed: {e}")
+
     def _load_simple_fallback(self):
-        """Ultra-simple fallback that always works"""
-        print("✅ Using rule-based sentiment (no model needed)")
-        self.models['rules'] = {
-            'pipeline': None,
-            'weight': 1.0,
-            'primary': True,
-            'model_id': 'rule-based'
-        }
+        """Ultra-simple fallback using transformers' default sentiment pipeline"""
+        try:
+            model = pipeline('sentiment-analysis')  # Uses default model
+            self.models['simple_fallback'] = {
+                'pipeline': model,
+                'weight': 1.0,
+                'primary': True,
+                'model_id': 'default'
+            }
+            print("✅ Simple fallback loaded")
+        except Exception as e:
+            print(f"❌ All fallbacks failed: {e}")
     
     def analyze_sentiment(self, text: str, language: str = 'auto') -> Dict:
         """Analyze sentiment using GPU acceleration"""
