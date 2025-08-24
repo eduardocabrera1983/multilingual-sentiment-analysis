@@ -1,0 +1,606 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Upload - Multilingual Sentiment Analysis{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: linear-gradient(45deg, #fafafa, #f8f9fa);
+        cursor: pointer;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .upload-area:hover {
+        border-color: #0d6efd;
+        background: linear-gradient(45deg, #f8f9fa, #e3f2fd);
+        transform: translateY(-2px);
+    }
+    
+    .upload-area.dragover {
+        border-color: #0d6efd;
+        background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+    }
+    
+    .upload-icon {
+        font-size: 4rem;
+        color: #0d6efd;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .upload-area:hover .upload-icon {
+        transform: scale(1.1);
+    }
+    
+    .file-requirements {
+        background: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+        padding: 1.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .sample-data-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .sample-data-card:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    .processing-preview {
+        background: linear-gradient(45deg, #fff3cd, #fef7e0);
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 1.5rem;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-3">
+                <i class="bi bi-cloud-upload me-2"></i>Batch File Upload
+            </h1>
+            <p class="lead">
+                Upload CSV or Excel files for comprehensive batch analysis with advanced business intelligence reporting.
+                Process hundreds of reviews simultaneously with our enhanced ML pipeline.
+            </p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Upload Area -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Your File
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="bi bi-cloud-upload-fill"></i>
+                            </div>
+                            <h4 class="mb-2">Drop your file here or click to browse</h4>
+                            <p class="text-muted mb-3">
+                                Supports CSV, Excel (.xlsx, .xls) files up to 16MB
+                            </p>
+                            <input type="file" 
+                                   name="file" 
+                                   id="fileInput" 
+                                   accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                   style="display: none;"
+                                   required>
+                            
+                            <div id="fileInfo" style="display: none;" class="mt-3">
+                                <div class="alert alert-success d-inline-flex align-items-center">
+                                    <i class="bi bi-file-check me-2"></i>
+                                    <div>
+                                        <strong id="fileName"></strong><br>
+                                        <small id="fileSize"></small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success btn-lg mt-3" id="uploadBtn" disabled>
+                                <i class="bi bi-cpu me-2"></i>Process File
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Processing Status -->
+            <div class="processing-preview mt-3" id="processingStatus">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border text-warning me-3" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Processing Your File...</h5>
+                        <p class="mb-0 small">
+                            Analyzing with enhanced ML pipeline. This may take a few minutes depending on file size.
+                        </p>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 6px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" 
+                         style="width: 0%" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="col-lg-4">
+            <!-- File Requirements -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>File Requirements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-success">
+                            <i class="bi bi-check-circle me-2"></i>Supported Formats
+                        </h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-file-earmark-text me-2"></i>CSV files (.csv)</li>
+                            <li><i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel files (.xlsx, .xls)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-info">
+                            <i class="bi bi-info-circle me-2"></i>Column Requirements
+                        </h6>
+                        <div class="small">
+                            <p class="mb-1">
+                                <strong>Required:</strong> One text column containing reviews/comments
+                            </p>
+                            <p class="mb-1">
+                                <strong>Column names:</strong> 'text', 'review', 'comment', 'content', or 'message'
+                            </p>
+                            <p class="mb-0 text-muted">
+                                The system will automatically detect your text column
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h6 class="text-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Limits
+                        </h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-hdd me-2"></i>Max file size: 16MB</li>
+                            <li><i class="bi bi-collection me-2"></i>Recommended: <1000 rows</li>
+                            <li><i class="bi bi-clock me-2"></i>Processing time: ~1-5 minutes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- What You'll Get -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gift me-2"></i>Analysis Output
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="mb-2">
+                            <i class="bi bi-plus-circle text-success me-2"></i>
+                            <strong>Enhanced Columns Added:</strong>
+                        </div>
+                        <ul class="list-unstyled ms-3">
+                            <li>• predicted_sentiment</li>
+                            <li>• predicted_primary_aspect</li>
+                            <li>• predicted_secondary_aspects</li>
+                            <li>• predicted_classification_type</li>
+                            <li>• predicted_priority_level</li>
+                            <li>• predicted_severity_level</li>
+                            <li>• predicted_recommendation</li>
+                            <li>• predicted_requires_immediate_action</li>
+                        </ul>
+                        
+                        <div class="mt-3">
+                            <i class="bi bi-graph-up text-primary me-2"></i>
+                            <strong>Business Intelligence Report</strong>
+                        </div>
+                        <ul class="list-unstyled ms-3 small text-muted">
+                            <li>• Priority distribution analysis</li>
+                            <li>• Mixed concerns identification</li>
+                            <li>• Top recommendations</li>
+                            <li>• Critical issues flagged</li>
+                            <li>• UX prioritization metrics</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Processing Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-cpu me-2"></i>Processing Pipeline
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if model_status and model_status.loaded %}
+                        <div class="d-flex align-items-center text-success mb-2">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <strong>Enhanced Models Active</strong>
+                        </div>
+                        <div class="small text-muted">
+                            <div>✅ XLM-RoBERTa Ensemble Sentiment</div>
+                            <div>✅ Multi-Label Aspect Classification</div>
+                            <div>✅ Business Intelligence Generation</div>
+                            <div>✅ User Experience Prioritization</div>
+                        </div>
+                    {% else %}
+                        <div class="d-flex align-items-center text-warning mb-2">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Basic Processing Mode</strong>
+                        </div>
+                        <div class="small text-muted">
+                            Enhanced models not loaded. Basic sentiment and aspect analysis will be provided.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sample Data Examples -->
+    <div class="row mt-5">
+        <div class="col">
+            <h3 class="mb-4">
+                <i class="bi bi-table me-2"></i>Sample Data Formats
+            </h3>
+            <p class="text-muted mb-4">
+                Here are examples of how your data should be structured. Click on any example to download a sample file.
+            </p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- CSV Example -->
+        <div class="col-md-6">
+            <div class="sample-data-card p-4" onclick="downloadSample('csv')">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-file-earmark-text text-primary fs-2 me-3"></i>
+                    <div>
+                        <h5 class="mb-1">CSV Format</h5>
+                        <p class="text-muted small mb-0">Simple comma-separated values</p>
+                    </div>
+                </div>
+                
+                <div class="bg-light p-3 rounded small font-monospace">
+                    <div class="mb-1"><strong>text,rating,country</strong></div>
+                    <div class="text-muted">Great app interface is easy...,5,US</div>
+                    <div class="text-muted">Tracking is inaccurate often...,2,DE</div>
+                    <div class="text-muted">Love the design but crashes...,3,ES</div>
+                </div>
+                
+                <div class="mt-3 text-center">
+                    <button type="button" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download me-2"></i>Download CSV Sample
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Excel Example -->
+        <div class="col-md-6">
+            <div class="sample-data-card p-4" onclick="downloadSample('excel')">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-file-earmark-spreadsheet text-success fs-2 me-3"></i>
+                    <div>
+                        <h5 class="mb-1">Excel Format</h5>
+                        <p class="text-muted small mb-0">Spreadsheet with multiple columns</p>
+                    </div>
+                </div>
+                
+                <div class="bg-light p-3 rounded">
+                    <table class="table table-sm table-bordered mb-0 small">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>review</th>
+                                <th>rating</th>
+                                <th>date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-monospace">
+                            <tr>
+                                <td class="text-truncate" style="max-width: 120px;">Interface is confusing but...</td>
+                                <td>3</td>
+                                <td>2025-08-01</td>
+                            </tr>
+                            <tr>
+                                <td class="text-truncate" style="max-width: 120px;">Perfect tracking accuracy...</td>
+                                <td>5</td>
+                                <td>2025-08-02</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3 text-center">
+                    <button type="button" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-download me-2"></i>Download Excel Sample
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Additional Info -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="file-requirements">
+                <h5 class="mb-2">
+                    <i class="bi bi-lightbulb me-2"></i>Pro Tips for Best Results
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled small">
+                            <li class="mb-1">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Use clear column names like 'text', 'review', 'comment'
+                            </li>
+                            <li class="mb-1">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Ensure text entries are at least 10 characters long
+                            </li>
+                            <li class="mb-1">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Remove empty rows and duplicate entries
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled small">
+                            <li class="mb-1">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Include additional context columns (rating, date, country)
+                            </li>
+                            <li class="mb-1">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Mixed language files are supported
+                            </li>
+                            <li class="mb-1">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Larger files will take longer but provide richer insights
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // File upload handling
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const processingStatus = document.getElementById('processingStatus');
+    const progressBar = document.getElementById('progressBar');
+    
+    // Click to upload
+    uploadArea.addEventListener('click', function(e) {
+        if (e.target !== fileInput) {
+            fileInput.click();
+        }
+    });
+    
+    // File selection handler
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            handleFileSelection(this.files[0]);
+        }
+    });
+    
+    // Drag and drop handlers
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelection(files[0]);
+        }
+    });
+    
+    // Handle file selection
+    function handleFileSelection(file) {
+        // Validate file type
+        const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+        const allowedExtensions = /\.(csv|xlsx|xls)$/i;
+        
+        if (!allowedTypes.includes(file.type) && !file.name.match(allowedExtensions)) {
+            showAlert('Please upload a CSV or Excel file (.csv, .xlsx, .xls)', 'error');
+            return;
+        }
+        
+        // Validate file size (16MB limit)
+        const maxSize = 16 * 1024 * 1024;
+        if (file.size > maxSize) {
+            showAlert('File size must be less than 16MB', 'error');
+            return;
+        }
+        
+        // Show file info
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.style.display = 'block';
+        uploadBtn.disabled = false;
+        
+        // Update upload area
+        uploadArea.classList.add('file-selected');
+    }
+    
+    // Form submission with progress simulation
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files.length) {
+            showAlert('Please select a file first', 'error');
+            return;
+        }
+        
+        // Show processing status
+        processingStatus.style.display = 'block';
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+        
+        // Simulate progress (replace with actual upload progress if needed)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90; // Don't complete until actual upload is done
+            progressBar.style.width = `${progress}%`;
+        }, 500);
+        
+        // Submit form
+        const formData = new FormData(this);
+        fetch(this.action || window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            if (response.ok) {
+                // Redirect to results page
+                window.location.href = response.url;
+            } else {
+                throw new Error('Upload failed');
+            }
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            processingStatus.style.display = 'none';
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="bi bi-cpu me-2"></i>Process File';
+            showAlert('Upload failed: ' + error.message, 'error');
+        });
+    });
+    
+    // Download sample files
+    function downloadSample(type) {
+        let sampleData, filename, mimeType;
+        
+        if (type === 'csv') {
+            sampleData = `text,rating,country,language
+"Great app interface is easy to use and navigation is intuitive",5,US,en
+"Tracking is inaccurate often shows wrong location information",2,DE,en
+"Love the design but crashes frequently during use",3,ES,en
+"La interfaz es confusa pero el seguimiento funciona bien",4,ES,es
+"Interface is impossible to use terrible navigation",1,US,en
+"Perfect tracking accuracy always shows correct status",5,FR,en`;
+            filename = 'sample_reviews.csv';
+            mimeType = 'text/csv';
+        } else {
+            // For Excel, we'll just provide CSV for simplicity
+            // In a real app, you might generate actual Excel files
+            sampleData = `review,rating,date,user_id
+"Interface is confusing but tracking works perfectly",3,2025-08-01,user_001
+"Perfect tracking accuracy always updated in real-time",5,2025-08-02,user_002
+"App crashes frequently terrible user experience overall",1,2025-08-03,user_003
+"Great design beautiful interface easy to navigate",4,2025-08-04,user_004`;
+            filename = 'sample_reviews_excel_format.csv';
+            mimeType = 'text/csv';
+        }
+        
+        // Create download
+        const blob = new Blob([sampleData], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showAlert(`Downloaded ${filename}`, 'success');
+    }
+    
+    // Utility functions
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function showAlert(message, type) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert.alert-auto');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show alert-auto`;
+        alert.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}-fill me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at top of container
+        const container = document.querySelector('.container');
+        container.insertBefore(alert, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

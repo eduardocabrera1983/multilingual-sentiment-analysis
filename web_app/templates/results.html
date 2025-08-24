@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - Multilingual Sentiment Analysis{% endblock %}
+
+{% block extra_head %}
+<style>
+    .result-section {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .confidence-bar {
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #e9ecef;
+    }
+    
+    .confidence-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+    
+    .aspect-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        margin: 0.2rem;
+        display: inline-block;
+    }
+    
+    .aspect-primary {
+        background: linear-gradient(45deg, #0d6efd, #6610f2);
+        color: white;
+        border: 2px solid transparent;
+    }
+    
+    .aspect-secondary {
+        background: linear-gradient(45deg, #ffc107, #fd7e14);
+        color: #000;
+        border: 2px solid transparent;
+    }
+    
+    .processing-info {
+        font-size: 0.85rem;
+        color: #6c757d;
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .recommendation-item {
+        background: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem 1.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .recommendation-critical {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+    }
+    
+    .recommendation-high {
+        border-left-color: #fd7e14;
+        background: #fff3cd;
+    }
+    
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-2">
+                <i class="bi bi-clipboard-data me-2"></i>Analysis Results
+            </h1>
+            <p class="lead text-muted">
+                Comprehensive multi-label sentiment and aspect analysis with business intelligence
+            </p>
+        </div>
+    </div>
+    
+    <!-- Analyzed Text -->
+    <div class="result-section">
+        <h4 class="mb-3">
+            <i class="bi bi-chat-quote me-2"></i>Analyzed Text
+        </h4>
+        <div class="bg-light p-3 rounded">
+            <blockquote class="blockquote mb-0">
+                <p class="fs-5">"{{ text }}"</p>
+            </blockquote>
+        </div>
+        {% if result.get('analysis_type') %}
+            <div class="processing-info">
+                <strong>Analysis Type:</strong> {{ result.analysis_type }}
+                {% if result.get('processing_time') %}
+                    | <strong>Processing Time:</strong> {{ "%.3f"|format(result.processing_time) }} seconds
+                {% endif %}
+                {% if result.get('language') and result.language != 'auto' %}
+                    | <strong>Language:</strong> {{ result.language.upper() }}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="row">
+        <!-- Left Column: Sentiment & Aspects -->
+        <div class="col-lg-8">
+            <!-- Sentiment Analysis -->
+            <div class="result-section">
+                <h4 class="mb-3">
+                    <i class="bi bi-heart-pulse me-2"></i>Sentiment Analysis
+                </h4>
+                
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            {% set sentiment_class = 'success' if result.sentiment == 'positive' else 'danger' if result.sentiment == 'negative' else 'secondary' %}
+                            <div class="display-4 mb-2">
+                                {% if result.sentiment == 'positive' %}
+                                    <i class="bi bi-emoji-smile text-success"></i>
+                                {% elif result.sentiment == 'negative' %}
+                                    <i class="bi bi-emoji-frown text-danger"></i>
+                                {% else %}
+                                    <i class="bi bi-emoji-neutral text-secondary"></i>
+                                {% endif %}
+                            </div>
+                            <h3>
+                                <span class="badge bg-{{ sentiment_class }} sentiment-badge">
+                                    {{ result.sentiment.title() }}
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-semibold">Confidence Score</span>
+                                <span class="fw-bold">{{ "%.1f"|format(result.sentiment_confidence * 100) }}%</span>
+                            </div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill bg-{{ sentiment_class }}" 
+                                     style="width: {{ (result.sentiment_confidence * 100)|int }}%"></div>
+                            </div>
+                        </div>
+                        
+                        {% if result.get('sentiment_scores') %}
+                            <div class="small">
+                                <div class="mb-1">
+                                    <span class="text-success">Positive:</span> 
+                                    <span class="fw-bold">{{ "%.1f"|format(result.sentiment_scores.get('positive', 0) * 100) }}%</span>
+                                </div>
+                                <div class="mb-1">
+                                    <span class="text-danger">Negative:</span> 
+                                    <span class="fw-bold">{{ "%.1f"|format(result.sentiment_scores.get('negative', 0) * 100) }}%</span>
+                                </div>
+                                <div class="mb-1">
+                                    <span class="text-secondary">Neutral:</span> 
+                                    <span class="fw-bold">{{ "%.1f"|format(result.sentiment_scores.get('neutral', 0) * 100) }}%</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Multi-Label Aspect Classification -->
+            <div class="result-section">
+                <h4 class="mb-3">
+                    <i class="bi bi-diagram-3 me-2"></i>Multi-Label Aspect Classification
+                </h4>
+                
+                <!-- Primary Aspect -->
+                <div class="mb-4">
+                    <h5 class="mb-2">Primary Aspect</h5>
+                    <div class="aspect-primary aspect-badge">
+                        <i class="bi bi-star-fill me-2"></i>
+                        {{ result.primary_aspect.replace('_', ' ').title() }}
+                    </div>
+                    {% if result.get('confidence') %}
+                        <div class="mt-2 small text-muted">
+                            Confidence: {{ "%.1f"|format(result.confidence * 100) }}%
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Secondary Aspects -->
+                {% if result.secondary_aspects and result.secondary_aspects|length > 0 %}
+                    <div class="mb-4">
+                        <h5 class="mb-2">Secondary Aspects</h5>
+                        {% for aspect in result.secondary_aspects %}
+                            <div class="aspect-secondary aspect-badge">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                {{ aspect.replace('_', ' ').title() }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Classification Type -->
+                <div class="mb-3">
+                    <h5 class="mb-2">Classification Type</h5>
+                    {% set type_class = 'success' if result.classification_type == 'single_aspect' else 'warning' if result.classification_type == 'dual_aspect' else 'danger' %}
+                    <span class="badge bg-{{ type_class }} classification-{{ result.classification_type }}">
+                        <i class="bi bi-tag me-2"></i>
+                        {{ result.classification_type.replace('_', ' ').title() }}
+                    </span>
+                </div>
+                
+                <!-- Mixed Concerns Flag -->
+                {% if result.get('mixed_concerns') %}
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>
+                            <strong>Mixed Concerns Detected:</strong> This review contains multiple different aspects that require coordinated attention.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Right Column: Business Intelligence -->
+        <div class="col-lg-4">
+            <!-- Priority & Severity -->
+            <div class="result-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-flag me-2"></i>Business Priority
+                </h5>
+                
+                <!-- Priority Level -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold">Priority Level</span>
+                    </div>
+                    {% set priority_class = 'danger' if result.priority_level == 'HIGH' else 'warning' if result.priority_level == 'MEDIUM' else 'success' %}
+                    <div class="text-center">
+                        <span class="badge bg-{{ priority_class }} priority-{{ result.priority_level.lower() }} fs-6 px-3 py-2">
+                            {{ result.priority_level }} PRIORITY
+                        </span>
+                        {% if result.priority_level == 'HIGH' %}
+                            <div class="pulse-animation d-inline-block">
+                                <i class="bi bi-exclamation-circle-fill text-danger fs-4 ms-2"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Severity Level -->
+                {% if result.get('severity_level') %}
+                    <div class="mb-3">
+                        <div class="fw-semibold mb-1">Severity Level</div>
+                        {% set severity_class = 'danger' if result.severity_level == 'CRITICAL' else 'warning' if result.severity_level == 'HIGH' else 'info' %}
+                        <span class="badge bg-{{ severity_class }}">
+                            {{ result.severity_level }}
+                        </span>
+                    </div>
+                {% endif %}
+                
+                <!-- Immediate Action Flag -->
+                {% if result.get('requires_immediate_action') %}
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-alarm me-2"></i>
+                        <div>
+                            <strong>Immediate Action Required</strong>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- User Experience Priority -->
+            {% if result.get('user_experience_priority') %}
+                <div class="result-section bg-info bg-opacity-10 border border-info">
+                    <h5 class="mb-2 text-info">
+                        <i class="bi bi-person-heart me-2"></i>UX Priority Alert
+                    </h5>
+                    <p class="small mb-0">
+                        This review has been flagged for <strong>User Experience Priority</strong> - 
+                        issues affecting interface, usability, or user satisfaction.
+                    </p>
+                </div>
+            {% endif %}
+            
+            <!-- Quick Stats -->
+            <div class="result-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-speedometer2 me-2"></i>Analysis Summary
+                </h5>
+                
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Aspects Detected:</span>
+                        <strong>{{ 1 + (result.secondary_aspects|length if result.secondary_aspects else 0) }}</strong>
+                    </div>
+                    
+                    {% if result.get('classification_type') %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Classification:</span>
+                            <strong>{{ result.classification_type.replace('_', ' ').title() }}</strong>
+                        </div>
+                    {% endif %}
+                    
+                    {% if result.get('language') and result.language != 'auto' %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Language:</span>
+                            <strong>{{ result.language.upper() }}</strong>
+                        </div>
+                    {% endif %}
+                    
+                    {% if result.get('processing_time') %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Processing Time:</span>
+                            <strong>{{ "%.0f"|format(result.processing_time * 1000) }}ms</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Business Intelligence & Recommendations -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="result-section">
+                <h4 class="mb-3">
+                    <i class="bi bi-lightbulb me-2"></i>Business Intelligence & Recommendations
+                </h4>
+                
+                <!-- Business Summary -->
+                {% if result.get('business_summary') %}
+                    <div class="mb-4">
+                        <h5 class="mb-2">Summary</h5>
+                        <div class="bg-light p-3 rounded">
+                            <p class="mb-0">{{ result.business_summary }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Main Recommendation -->
+                {% if result.get('recommendation') %}
+                    <div class="mb-4">
+                        <h5 class="mb-2">Primary Recommendation</h5>
+                        <div class="recommendation-item {% if result.priority_level == 'HIGH' %}recommendation-critical{% elif result.priority_level == 'MEDIUM' %}recommendation-high{% endif %}">
+                            <i class="bi bi-arrow-right-circle me-2"></i>
+                            {{ result.recommendation }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Additional Insights -->
+                <div class="row">
+                    {% if result.get('user_experience_priority') %}
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title text-info">
+                                        <i class="bi bi-person-check me-2"></i>UX Focus
+                                    </h6>
+                                    <p class="card-text small">
+                                        This review highlights user experience issues that should be prioritized 
+                                        for interface and usability improvements.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if result.get('mixed_concerns') %}
+                        <div class="col-md-6">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <h6 class="card-title text-warning">
+                                        <i class="bi bi-diagram-2 me-2"></i>Complex Issue
+                                    </h6>
+                                    <p class="card-text small">
+                                        Multiple aspects detected - requires coordinated response 
+                                        from different teams or departments.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('analyze_text') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Analyze Another Text
+                </a>
+                <a href="{{ url_for('upload_file') }}" class="btn btn-success">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload File for Batch Analysis
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                    <i class="bi bi-graph-up me-2"></i>View Dashboard
+                </a>
+                {% if single_analysis %}
+                    <button class="btn btn-outline-secondary" onclick="exportResult()">
+                        <i class="bi bi-download me-2"></i>Export Result
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Animate confidence bars on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const confidenceBars = document.querySelectorAll('.confidence-fill');
+        
+        setTimeout(() => {
+            confidenceBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+            });
+        }, 200);
+    });
+    
+    // Export result function
+    function exportResult() {
+        const resultData = {
+            text: "{{ text|replace('"', '\\"') }}",
+            sentiment: "{{ result.sentiment }}",
+            sentiment_confidence: {{ result.sentiment_confidence }},
+            primary_aspect: "{{ result.primary_aspect }}",
+            secondary_aspects: {{ result.secondary_aspects|tojson if result.secondary_aspects else '[]' }},
+            classification_type: "{{ result.classification_type }}",
+            priority_level: "{{ result.priority_level }}",
+            {% if result.get('severity_level') %}severity_level: "{{ result.severity_level }}",{% endif %}
+            {% if result.get('business_summary') %}business_summary: "{{ result.business_summary|replace('"', '\\"') }}",{% endif %}
+            {% if result.get('recommendation') %}recommendation: "{{ result.recommendation|replace('"', '\\"') }}",{% endif %}
+            requires_immediate_action: {{ result.get('requires_immediate_action', false)|tojson }},
+            user_experience_priority: {{ result.get('user_experience_priority', false)|tojson }},
+            mixed_concerns: {{ result.get('mixed_concerns', false)|tojson }}
+        };
+        
+        // Create and download JSON file
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resultData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "sentiment_analysis_result.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+    
+    // Add smooth scrolling to action buttons
+    document.querySelectorAll('a[href*="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href.includes('#')) {
+                e.preventDefault();
+                const target = document.querySelector(href.split('#')[1]);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

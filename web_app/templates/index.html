@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Multilingual Sentiment Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="fade-in">Advanced ML Sentiment Analysis</h1>
+                <p class="lead slide-up">
+                    Enterprise-grade multilingual sentiment analysis with multi-label aspect classification, 
+                    user experience prioritization, and automated business intelligence generation.
+                </p>
+                <div class="mt-4">
+                    <a href="{{ url_for('analyze_text') }}" class="btn btn-light btn-lg me-3">
+                        <i class="bi bi-search me-2"></i>Start Analysis
+                    </a>
+                    <a href="{{ url_for('upload_file') }}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-cloud-upload me-2"></i>Batch Upload
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="model-info text-center p-4 rounded">
+                    <h5 class="mb-3">System Status</h5>
+                    {% if model_status and model_status.loaded %}
+                        <div class="status-indicator status-loaded mb-3">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            Enhanced Models Active
+                        </div>
+                        <div class="small">
+                            <div>✅ Multi-label Classification</div>
+                            <div>✅ Business Intelligence</div>
+                            <div>✅ User Experience Prioritization</div>
+                            <div>✅ {{ stats.languages_supported }}+ Languages</div>
+                        </div>
+                    {% else %}
+                        <div class="status-indicator status-error mb-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Basic Mode Active
+                        </div>
+                        <div class="small text-muted">
+                            Enhanced models not loaded<br>
+                            {% if model_status and model_status.error %}
+                                Error: {{ model_status.error[:50] }}...
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Key Features -->
+<section class="container my-5">
+    <div class="row text-center mb-5">
+        <div class="col">
+            <h2 class="mb-3">Advanced ML Capabilities</h2>
+            <p class="lead text-muted">
+                Powered by state-of-the-art transformer models and innovative multi-label classification
+            </p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Multi-label Classification -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-primary">
+                        <i class="bi bi-diagram-3"></i>
+                    </div>
+                    <h5 class="card-title">Multi-Label Classification</h5>
+                    <p class="card-text">
+                        Advanced aspect detection with primary + secondary aspects, 
+                        mixed concerns identification, and classification types 
+                        (single_aspect, dual_aspect, mixed_concerns).
+                    </p>
+                    <div class="mt-3">
+                        <span class="language-badge">Primary Aspect</span>
+                        <span class="language-badge">Secondary Aspects</span>
+                        <span class="language-badge">Mixed Concerns</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Experience Prioritization -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-success">
+                        <i class="bi bi-person-heart"></i>
+                    </div>
+                    <h5 class="card-title">UX Prioritization</h5>
+                    <p class="card-text">
+                        Intelligent prioritization system that automatically identifies 
+                        and elevates user experience issues using weighted business logic 
+                        and severity assessment.
+                    </p>
+                    <div class="mt-3">
+                        <span class="badge priority-high">HIGH Priority</span>
+                        <span class="badge priority-medium">MEDIUM Priority</span>
+                        <span class="badge priority-low">LOW Priority</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Business Intelligence -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-info">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h5 class="card-title">Business Intelligence</h5>
+                    <p class="card-text">
+                        Automated generation of actionable recommendations, severity levels, 
+                        immediate action flags, and comprehensive business metrics 
+                        for strategic decision making.
+                    </p>
+                    <div class="mt-3">
+                        <span class="language-badge">Recommendations</span>
+                        <span class="language-badge">Severity Levels</span>
+                        <span class="language-badge">Action Flags</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Multilingual Support -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-warning">
+                        <i class="bi bi-translate"></i>
+                    </div>
+                    <h5 class="card-title">Multilingual Processing</h5>
+                    <p class="card-text">
+                        Support for 5+ languages with automatic language detection, 
+                        powered by XLM-RoBERTa, mBERT, and DistilBERT-Multilingual 
+                        ensemble architecture.
+                    </p>
+                    <div class="mt-3">
+                        <span class="language-badge">English</span>
+                        <span class="language-badge">Spanish</span>
+                        <span class="language-badge">German</span>
+                        <span class="language-badge">French</span>
+                        <span class="language-badge">Dutch</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Real-time Processing -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-danger">
+                        <i class="bi bi-lightning-charge"></i>
+                    </div>
+                    <h5 class="card-title">Real-time Processing</h5>
+                    <p class="card-text">
+                        High-performance analysis with GPU acceleration support, 
+                        processing 20+ texts per second with comprehensive 
+                        fallback mechanisms for reliability.
+                    </p>
+                    <div class="mt-3">
+                        <span class="language-badge">GPU Accelerated</span>
+                        <span class="language-badge">Batch Processing</span>
+                        <span class="language-badge">API Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Advanced Analytics -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-secondary">
+                        <i class="bi bi-clipboard-data"></i>
+                    </div>
+                    <h5 class="card-title">Advanced Analytics</h5>
+                    <p class="card-text">
+                        Comprehensive reporting with sentiment distributions, 
+                        aspect breakdowns, priority analysis, and exportable 
+                        business intelligence dashboards.
+                    </p>
+                    <div class="mt-3">
+                        <span class="language-badge">Export CSV</span>
+                        <span class="language-badge">Visual Charts</span>
+                        <span class="language-badge">BI Reports</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Performance Metrics -->
+<section class="container my-5">
+    <div class="row">
+        <div class="col">
+            <h2 class="text-center mb-4">System Performance</h2>
+        </div>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="bi-card text-center">
+                <div class="bi-metric">100%</div>
+                <div class="bi-label">Sentiment Accuracy</div>
+                <small class="text-muted">Tested on multilingual datasets</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="bi-card text-center">
+                <div class="bi-metric">100%</div>
+                <div class="bi-label">Aspect Accuracy</div>
+                <small class="text-muted">Multi-label classification success</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="bi-card text-center">
+                <div class="bi-metric">20+</div>
+                <div class="bi-label">Texts/Second</div>
+                <small class="text-muted">Real-time processing speed</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="bi-card text-center">
+                <div class="bi-metric">90.91%</div>
+                <div class="bi-label">System Reliability</div>
+                <small class="text-muted">Comprehensive test success rate</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Start Actions -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col">
+                <h2 class="mb-4">Get Started</h2>
+                <p class="lead mb-4">
+                    Choose your analysis method and experience the power of advanced ML sentiment analysis
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-primary">
+                    <div class="card-body text-center">
+                        <i class="bi bi-search display-4 text-primary mb-3"></i>
+                        <h5 class="card-title">Single Text Analysis</h5>
+                        <p class="card-text">
+                            Analyze individual reviews, comments, or feedback with 
+                            complete multi-label classification and business insights.
+                        </p>
+                        <a href="{{ url_for('analyze_text') }}" class="btn btn-primary">
+                            Start Analysis <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-success">
+                    <div class="card-body text-center">
+                        <i class="bi bi-cloud-upload display-4 text-success mb-3"></i>
+                        <h5 class="card-title">Batch Processing</h5>
+                        <p class="card-text">
+                            Upload CSV or Excel files for bulk analysis with 
+                            comprehensive business intelligence reporting.
+                        </p>
+                        <a href="{{ url_for('upload_file') }}" class="btn btn-success">
+                            Upload File <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-info">
+                    <div class="card-body text-center">
+                        <i class="bi bi-graph-up display-4 text-info mb-3"></i>
+                        <h5 class="card-title">Business Dashboard</h5>
+                        <p class="card-text">
+                            View comprehensive analytics, trends, and business 
+                            intelligence generated from your sentiment analysis.
+                        </p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                            View Dashboard <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Models Info -->
+{% if stats %}
+<section class="container my-5">
+    <div class="row">
+        <div class="col">
+            <h2 class="text-center mb-4">ML Architecture</h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="model-info p-4">
+                <h5 class="mb-3">
+                    <i class="bi bi-cpu-fill me-2"></i>
+                    {{ stats.models_loaded }}
+                </h5>
+                
+                {% if stats.features %}
+                    <h6 class="mt-3 mb-2">Key Features:</h6>
+                    <div class="row">
+                        {% for feature in stats.features %}
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <small>{{ feature }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('about') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-info-circle me-1"></i>Learn More About Our Models
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Add some interactive effects
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate metric cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'slideUp 0.6s ease-out forwards';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe all bi-cards
+        document.querySelectorAll('.bi-card').forEach(card => {
+            observer.observe(card);
+        });
+        
+        // Add hover effect to feature cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock %}

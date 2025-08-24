@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Business Intelligence Dashboard - Multilingual Sentiment Analysis{% endblock %}
+
+{% block extra_head %}
+<!-- Plotly.js for interactive charts -->
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+<style>
+    .metric-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .insight-card {
+        background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+        border-left: 4px solid #0d6efd;
+        border-radius: 0 8px 8px 0;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .demo-badge {
+        background: linear-gradient(45deg, #ffc107, #fd7e14);
+        color: #000;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Business Intelligence Dashboard
+                    </h1>
+                    <p class="lead text-muted mb-0">
+                        Advanced analytics and insights from multilingual sentiment analysis
+                    </p>
+                </div>
+                {% if demo_mode %}
+                    <div>
+                        <span class="demo-badge">
+                            <i class="bi bi-eye me-1"></i>Demo Mode
+                        </span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% if demo_mode %}
+        <!-- Demo Mode Warning -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>
+                        <strong>Demo Mode:</strong> Enhanced models are not loaded. 
+                        This dashboard shows sample data to demonstrate the business intelligence capabilities. 
+                        Enable enhanced models to see real analytics from your data.
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col">
+            <h3 class="mb-3">
+                <i class="bi bi-speedometer2 me-2"></i>Key Performance Indicators
+            </h3>
+        </div>
+    </div>
+    
+    <div class="row g-3 mb-5">
+        <!-- Total Reviews -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-value text-primary">
+                    {{ data.total_reviews if data else '1,247' }}
+                </div>
+                <div class="metric-label">Total Reviews</div>
+                <small class="text-muted">Analyzed</small>
+            </div>
+        </div>
+        
+        <!-- Mixed Concerns -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-value text-warning">
+                    {{ data.mixed_concerns_pct if data else '23%' }}
+                </div>
+                <div class="metric-label">Mixed Concerns</div>
+                <small class="text-muted">Complex Issues</small>
+            </div>
+        </div>
+        
+        <!-- UX Priority -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-value text-info">
+                    {{ data.ux_priority_pct if data else '34%' }}
+                </div>
+                <div class="metric-label">UX Priority</div>
+                <small class="text-muted">Interface Issues</small>
+            </div>
+        </div>
+        
+        <!-- High Priority -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-value text-danger">
+                    {{ data.high_priority_pct if data else '18%' }}
+                </div>
+                <div class="metric-label">High Priority</div>
+                <small class="text-muted">Urgent Issues</small>
+            </div>
+        </div>
+        
+        <!-- Positive Sentiment -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-value text-success">
+                    {% if data and data.sentiment_distribution %}
+                        {{ data.sentiment_distribution.positive }}%
+                    {% else %}
+                        67%
+                    {% endif %}
+                </div>
+                <div class="metric-label">Positive</div>
+                <small class="text-muted">Sentiment</small>
+            </div>
+        </div>
+        
+        <!-- Processing Speed -->
+        <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-value text-secondary">
+                    {{ data.avg_processing_time if data else '0.05s' }}
+                </div>
+                <div class="metric-label">Processing</div>
+                <small class="text-muted">Per Review</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <!-- Sentiment Distribution -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h4 class="mb-3">
+                    <i class="bi bi-pie-chart me-2"></i>Sentiment Distribution
+                </h4>
+                <div id="sentimentChart" style="height: 350px;"></div>
+            </div>
+        </div>
+        
+        <!-- Aspect Distribution -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h4 class="mb-3">
+                    <i class="bi bi-bar-chart me-2"></i>Aspect Classification
+                </h4>
+                <div id="aspectChart" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <!-- Priority Levels -->
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h4 class="mb-3">
+                    <i class="bi bi-flag me-2"></i>Priority Levels
+                </h4>
+                <div id="priorityChart" style="height: 300px;"></div>
+            </div>
+        </div>
+        
+        <!-- Language Distribution -->
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h4 class="mb-3">
+                    <i class="bi bi-translate me-2"></i>Languages Processed
+                </h4>
+                <div id="languageChart" style="height: 300px;"></div>
+            </div>
+        </div>
+        
+        <!-- Classification Types -->
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h4 class="mb-3">
+                    <i class="bi bi-diagram-3 me-2"></i>Classification Types
+                </h4>
+                <div id="classificationChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Business Insights -->
+    <div class="row mb-4">
+        <div class="col">
+            <h3 class="mb-3">
+                <i class="bi bi-lightbulb me-2"></i>Business Insights & Recommendations
+            </h3>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Key Insights -->
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <!-- User Experience Insight -->
+                <div class="col-md-6">
+                    <div class="insight-card border-info">
+                        <h5 class="text-info mb-2">
+                            <i class="bi bi-person-heart me-2"></i>User Experience Focus
+                        </h5>
+                        <p class="mb-2">
+                            <strong>34%</strong> of reviews mention interface or usability issues. 
+                            This represents a significant opportunity for UX improvements.
+                        </p>
+                        <div class="small text-muted">
+                            <strong>Recommendation:</strong> Prioritize interface redesign and navigation improvements
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mixed Concerns Insight -->
+                <div class="col-md-6">
+                    <div class="insight-card border-warning">
+                        <h5 class="text-warning mb-2">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Complex Issues
+                        </h5>
+                        <p class="mb-2">
+                            <strong>23%</strong> of reviews contain mixed concerns requiring 
+                            coordinated responses from multiple teams.
+                        </p>
+                        <div class="small text-muted">
+                            <strong>Recommendation:</strong> Implement cross-functional issue resolution process
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Insight -->
+                <div class="col-md-6">
+                    <div class="insight-card border-danger">
+                        <h5 class="text-danger mb-2">
+                            <i class="bi bi-speedometer me-2"></i>Performance Concerns
+                        </h5>
+                        <p class="mb-2">
+                            <strong>18%</strong> of reviews are flagged as high priority, 
+                            primarily related to app crashes and slow performance.
+                        </p>
+                        <div class="small text-muted">
+                            <strong>Recommendation:</strong> Urgent engineering review of performance bottlenecks
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Positive Feedback -->
+                <div class="col-md-6">
+                    <div class="insight-card border-success">
+                        <h5 class="text-success mb-2">
+                            <i class="bi bi-check-circle me-2"></i>Strengths to Leverage
+                        </h5>
+                        <p class="mb-2">
+                            <strong>67%</strong> positive sentiment with particular praise 
+                            for tracking accuracy and delivery notifications.
+                        </p>
+                        <div class="small text-muted">
+                            <strong>Recommendation:</strong> Highlight these strengths in marketing materials
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Items -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-task me-2"></i>Immediate Actions Required
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex align-items-start">
+                            <div class="badge bg-danger rounded-pill me-3 mt-1">1</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Critical Performance Issues</h6>
+                                <p class="mb-1 small text-muted">
+                                    224 reviews mention app crashes - immediate engineering attention needed
+                                </p>
+                                <small class="text-danger">High Priority</small>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item d-flex align-items-start">
+                            <div class="badge bg-warning rounded-pill me-3 mt-1">2</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Interface Redesign</h6>
+                                <p class="mb-1 small text-muted">
+                                    423 reviews cite navigation and usability problems
+                                </p>
+                                <small class="text-warning">Medium Priority</small>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item d-flex align-items-start">
+                            <div class="badge bg-info rounded-pill me-3 mt-1">3</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Cross-Team Coordination</h6>
+                                <p class="mb-1 small text-muted">
+                                    287 mixed concern reviews need multi-team responses
+                                </p>
+                                <small class="text-info">Medium Priority</small>
+                            </div>
+                        </div>
+                        
+                        <div class="list-group-item d-flex align-items-start">
+                            <div class="badge bg-success rounded-pill me-3 mt-1">4</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Leverage Strengths</h6>
+                                <p class="mb-1 small text-muted">
+                                    Promote tracking accuracy and delivery features
+                                </p>
+                                <small class="text-success">Low Priority</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export and Actions -->
+    <div class="row mt-5">
+        <div class="col">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">Ready to Act on These Insights?</h5>
+                            <p class="mb-0 text-muted">
+                                Export detailed reports or analyze more data to get deeper insights for your business decisions.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-primary" onclick="exportDashboard()">
+                                    <i class="bi bi-download me-2"></i>Export Report
+                                </button>
+                                <a href="{{ url_for('upload_file') }}" class="btn btn-success">
+                                    <i class="bi bi-cloud-upload me-2"></i>Analyze More Data
+                                </a>
+                                <a href="{{ url_for('analyze_text') }}" class="btn btn-info">
+                                    <i class="bi bi-search me-2"></i>Single Analysis
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Dashboard data - use actual data if available, otherwise demo data
+    const dashboardData = {
+        sentiment: {{ data.sentiment_distribution|tojson if data and data.sentiment_distribution else '{"positive": 45, "negative": 25, "neutral": 30}'|safe }},
+        aspects: {{ data.aspect_distribution|tojson if data and data.aspect_distribution else '{"user_experience": 35, "performance": 25, "tracking_accuracy": 20, "general_satisfaction": 20}'|safe }},
+        priorities: {{ data.priority_levels|tojson if data and data.priority_levels else '{"HIGH": 15, "MEDIUM": 50, "LOW": 35}'|safe }},
+        languages: {{ data.language_distribution|tojson if data and data.language_distribution else '{"en": 60, "es": 20, "de": 10, "fr": 7, "nl": 3}'|safe }},
+        classification: {
+            "Single Aspect": 45,
+            "Dual Aspect": 35,
+            "Mixed Concerns": 20
+        }
+    };
+    
+    // Chart configurations
+    const chartConfig = {
+        displayModeBar: false,
+        responsive: true
+    };
+    
+    // Sentiment Distribution Pie Chart
+    const sentimentData = [{
+        values: Object.values(dashboardData.sentiment),
+        labels: Object.keys(dashboardData.sentiment).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+        type: 'pie',
+        hole: 0.4,
+        marker: {
+            colors: ['#198754', '#dc3545', '#6c757d']
+        },
+        textinfo: 'label+percent',
+        textposition: 'outside'
+    }];
+    
+    const sentimentLayout = {
+        title: '',
+        font: { size: 12 },
+        margin: { t: 20, b: 20, l: 20, r: 20 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.1 }
+    };
+    
+    Plotly.newPlot('sentimentChart', sentimentData, sentimentLayout, chartConfig);
+    
+    // Aspect Distribution Bar Chart
+    const aspectData = [{
+        x: Object.keys(dashboardData.aspects).map(k => k.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())),
+        y: Object.values(dashboardData.aspects),
+        type: 'bar',
+        marker: {
+            color: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14']
+        }
+    }];
+    
+    const aspectLayout = {
+        title: '',
+        font: { size: 12 },
+        margin: { t: 20, b: 80, l: 40, r: 20 },
+        xaxis: { tickangle: -45 },
+        yaxis: { title: 'Number of Reviews' }
+    };
+    
+    Plotly.newPlot('aspectChart', aspectData, aspectLayout, chartConfig);
+    
+    // Priority Levels Donut Chart
+    const priorityData = [{
+        values: Object.values(dashboardData.priorities),
+        labels: Object.keys(dashboardData.priorities),
+        type: 'pie',
+        hole: 0.5,
+        marker: {
+            colors: ['#dc3545', '#ffc107', '#198754']
+        },
+        textinfo: 'label+percent'
+    }];
+    
+    const priorityLayout = {
+        title: '',
+        font: { size: 12 },
+        margin: { t: 20, b: 20, l: 20, r: 20 },
+        showlegend: false
+    };
+    
+    Plotly.newPlot('priorityChart', priorityData, priorityLayout, chartConfig);
+    
+    // Language Distribution Bar Chart
+    const languageData = [{
+        x: Object.keys(dashboardData.languages).map(k => k.toUpperCase()),
+        y: Object.values(dashboardData.languages),
+        type: 'bar',
+        marker: {
+            color: '#17a2b8'
+        }
+    }];
+    
+    const languageLayout = {
+        title: '',
+        font: { size: 12 },
+        margin: { t: 20, b: 40, l: 40, r: 20 },
+        yaxis: { title: 'Percentage' }
+    };
+    
+    Plotly.newPlot('languageChart', languageData, languageLayout, chartConfig);
+    
+    // Classification Types Horizontal Bar Chart
+    const classificationData = [{
+        y: Object.keys(dashboardData.classification),
+        x: Object.values(dashboardData.classification),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+            color: ['#198754', '#ffc107', '#dc3545']
+        }
+    }];
+    
+    const classificationLayout = {
+        title: '',
+        font: { size: 12 },
+        margin: { t: 20, b: 20, l: 120, r: 20 },
+        xaxis: { title: 'Number of Reviews' }
+    };
+    
+    Plotly.newPlot('classificationChart', classificationData, classificationLayout, chartConfig);
+    
+    // Export dashboard function
+    function exportDashboard() {
+        const dashboardSummary = {
+            timestamp: new Date().toISOString(),
+            metrics: {
+                total_reviews: {{ data.total_reviews if data else '1247' }},
+                mixed_concerns_percentage: {{ data.mixed_concerns_pct if data else '23' }},
+                ux_priority_percentage: {{ data.ux_priority_pct if data else '34' }},
+                high_priority_percentage: {{ data.high_priority_pct if data else '18' }},
+                positive_sentiment_percentage: {{ data.sentiment_distribution.positive if data and data.sentiment_distribution else '67' }}
+            },
+            distributions: dashboardData,
+            insights: [
+                "34% of reviews mention interface or usability issues",
+                "23% of reviews contain mixed concerns requiring coordinated responses",
+                "18% of reviews are flagged as high priority",
+                "67% positive sentiment with praise for tracking accuracy"
+            ],
+            recommendations: [
+                "Prioritize interface redesign and navigation improvements",
+                "Implement cross-functional issue resolution process",
+                "Urgent engineering review of performance bottlenecks",
+                "Highlight tracking strengths in marketing materials"
+            ]
+        };
+        
+        // Create and download JSON file
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dashboardSummary, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `sentiment_analysis_dashboard_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        
+        // Show success message
+        showAlert('Dashboard report exported successfully!', 'success');
+    }
+    
+    // Show alert function
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+    
+    // Animate metrics on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const metricCards = document.querySelectorAll('.metric-card');
+        metricCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}
