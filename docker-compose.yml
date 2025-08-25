@@ -8,13 +8,14 @@ services:
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=multilingual-sentiment-production-key-2025
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "600", "--worker-class", "sync", "app:app"]
     volumes:
       - ./web_app/uploads:/app/web_app/uploads
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 60s
       retries: 3
       start_period: 60s
     deploy:

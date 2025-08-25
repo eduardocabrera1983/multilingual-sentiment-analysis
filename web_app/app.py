@@ -81,6 +81,9 @@ def load_ml_models():
         logger.error(error_msg)
         print(f"❌ {error_msg}")
 
+# Load models when module imports (works with Gunicorn)
+load_ml_models()
+
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
@@ -295,39 +298,27 @@ def process_uploaded_file_with_your_models(filepath):
                     if idx % 100 == 0:
                         print(f"   Processed {idx}/{len(df)} reviews...")
             
-            # Create enhanced dataframe
-            enhanced_df = df.copy()
-            for i, result in enumerate(results):
-                idx = result['original_index']
-                enhanced_df.at[idx, 'predicted_sentiment'] = result['sentiment']
-                enhanced_df.at[idx, 'predicted_primary_aspect'] = result['primary_aspect']
-                enhanced_df.at[idx, 'predicted_priority_level'] = result['priority_level']
-                enhanced_df.at[idx, 'predicted_classification_type'] = result['classification_type']
-            
             # Generate business intelligence
             business_intelligence = generate_business_intelligence_from_results(results)
             
         else:
             print("⚠️ Using basic fallback for batch processing...")
-            enhanced_df = df.copy()
-            enhanced_df['predicted_sentiment'] = 'neutral'
-            enhanced_df['predicted_primary_aspect'] = 'general_satisfaction'
+            results = []
             business_intelligence = {'message': 'Enhanced models required for full analysis'}
         
         # Generate summary
         summary = {
-            'total_reviews': len(enhanced_df),
+            'total_reviews': len(df),
             'filename': os.path.basename(filepath),
             'text_column_used': text_column,
-            'columns_added': [col for col in enhanced_df.columns if col.startswith('predicted_')],
             'business_intelligence': business_intelligence,
             'processing_successful': True
         }
         
         return {
             'summary': summary,
-            'dataframe': enhanced_df,
-            'sample_rows': enhanced_df.head(10).to_dict('records') if len(enhanced_df) > 0 else []
+            'dataframe': df,
+            'sample_rows': df.head(10).to_dict('records') if len(df) > 0 else []
         }
         
     except Exception as e:
@@ -422,9 +413,6 @@ def internal_error(error):
 if __name__ == '__main__':
     print("🚀 Starting Enhanced Flask App for Multilingual Sentiment Analysis")
     print("=" * 70)
-    
-    # Load YOUR models at startup
-    load_ml_models()
     
     print("\n🎯 System Status:")
     if model_loading_status['loaded']:
