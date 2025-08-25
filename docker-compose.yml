@@ -1,26 +1,18 @@
+version: '3.8'
+
 services:
   sentiment-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "80:5000"
     environment:
       - FLASK_ENV=production
-      - SECRET_KEY=multilingual-sentiment-production-key-2025
-    command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "600", "--worker-class", "sync", "app:app"]
+      - FORCE_CPU=true
     volumes:
-      - ./web_app/uploads:/app/web_app/uploads
+      - ./uploads:/app/uploads
+      - ./cache:/app/.cache
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 60s
-      retries: 3
-      start_period: 60s
     deploy:
       resources:
         limits:
-          memory: 4G
-        reservations:
-          memory: 2G
+          memory: 6G
