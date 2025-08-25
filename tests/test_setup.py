@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Pure Multi-Label Test Setup - FINAL VERSION
-Save as: src/test_setup.py
+Pure Multi-Label Test Setup - FIXED VERSION
+Save as: tests/test_setup.py
 
 Clean setup testing only pure multi-label implementation
 """
@@ -48,21 +48,23 @@ def test_pure_multilabel_imports():
     print("\n🚀 Testing Pure Multi-Label Model Imports:")
     print("-" * 50)
     
-    # Add paths
+    # Add paths - FIXED
+    sys.path.append('.')  # Add project root
     sys.path.append('src')
     sys.path.append('src/models')
+    sys.path.append('src/pipelines')
     
     try:
         # Test enhanced sentiment classifier
-        from models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
+        from src.models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
         print("✅ Enhanced sentiment classifier imported")
         
         # Test pure multi-label aspect classifier
-        from models.enhanced_aspect_classifier import EnhancedAspectClassifier
+        from src.models.enhanced_aspect_classifier import EnhancedAspectClassifier
         print("✅ Pure multi-label aspect classifier imported")
         
-        # Test pure multi-label integrated pipeline
-        from integrated_ml_pipeline import IntegratedMLPipeline
+        # Test pure multi-label integrated pipeline - FIXED
+        from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
         print("✅ Pure multi-label integrated pipeline imported")
         
         return True
@@ -72,7 +74,7 @@ def test_pure_multilabel_imports():
         print("📂 Check that files exist:")
         print("   - src/models/enhanced_sentiment_classifier.py")
         print("   - src/models/enhanced_aspect_classifier.py") 
-        print("   - src/integrated_ml_pipeline.py")
+        print("   - src/pipelines/integrated_ml_pipeline.py")
         return False
 
 def test_pure_multilabel_initialization():
@@ -81,21 +83,21 @@ def test_pure_multilabel_initialization():
     print("-" * 50)
     
     try:
-        # Test enhanced sentiment classifier
+        # Test enhanced sentiment classifier - FIXED
         print("🔮 Initializing enhanced sentiment classifier...")
-        from models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
+        from src.models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
         sentiment_classifier = EnhancedSentimentClassifier(use_ensemble=True)
         print("✅ Enhanced sentiment classifier initialized")
         
-        # Test pure multi-label aspect classifier
+        # Test pure multi-label aspect classifier - FIXED
         print("🎯 Initializing pure multi-label aspect classifier...")
-        from models.enhanced_aspect_classifier import EnhancedAspectClassifier
+        from src.models.enhanced_aspect_classifier import EnhancedAspectClassifier
         aspect_classifier = EnhancedAspectClassifier()
         print("✅ Pure multi-label aspect classifier initialized")
         
-        # Test pure multi-label integrated pipeline
+        # Test pure multi-label integrated pipeline - FIXED
         print("🔗 Initializing pure multi-label integrated pipeline...")
-        from integrated_ml_pipeline import IntegratedMLPipeline
+        from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
         pipeline = IntegratedMLPipeline()
         print("✅ Pure multi-label integrated pipeline initialized")
         
@@ -361,7 +363,7 @@ def test_fedex_data_structure():
                 pipeline = models['pipeline']
                 
                 # Test DataFrame analysis
-                print("🔄 Testing DataFrame analysis...")
+                print("📄 Testing DataFrame analysis...")
                 
                 # Analyze small sample
                 sample_df = df.head(3).copy()
@@ -478,9 +480,9 @@ if __name__ == "__main__":
         print(f"\n" + "="*70)
         print("🏆 PURE MULTI-LABEL SYSTEM READY FOR BOOTCAMP!")
         print(f"="*70)
-        print(f"📁 Next steps:")
+        print(f"📋 Next steps:")
         print(f"   1. Run: python src/model_testing.py")
-        print(f"   2. Test with your FedX data")
+        print(f"   2. Test with your FedEx data")
         print(f"   3. Prepare presentation slides")
         print(f"   4. Showcase your advanced ML system!")
         
@@ -494,4 +496,4 @@ if __name__ == "__main__":
         print("🔧 SETUP NEEDS REFINEMENT") 
         print(f"="*70)
         print(f"📋 Address the failed tests above")
-        print(f"🔄 Then re-run: python src/test_setup.py")
+        print(f"🔄 Then re-run: python tests/test_setup.py")

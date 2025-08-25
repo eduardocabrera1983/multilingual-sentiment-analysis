@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhanced Flask App for Multilingual Sentiment Analysis
-FIXED VERSION - Correct import paths and structure
+FIXED VERSION - No emojis to avoid UTF-8 issues
 """
 
 import os
@@ -22,8 +22,8 @@ project_root = Path(__file__).parent.parent  # Go up from web_app to project roo
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-print(f"🔍 Project root: {project_root}")
-print(f"🐍 Python path updated with: {project_root} and {project_root / 'src'}")
+print(f"[INFO] Project root: {project_root}")
+print(f"[INFO] Python path updated with: {project_root} and {project_root / 'src'}")
 
 # Import your enhanced models with correct paths
 try:
@@ -31,10 +31,10 @@ try:
     from src.models.enhanced_aspect_classifier import EnhancedAspectClassifier
     from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline  # FIXED: correct path
     MODELS_AVAILABLE = True
-    print("✅ Successfully imported all enhanced models!")
+    print("[SUCCESS] Successfully imported all enhanced models!")
 except ImportError as e:
-    print(f"⚠️ Could not import enhanced models: {e}")
-    print("💡 The app will run in basic mode with fallback analysis")
+    print(f"[WARNING] Could not import enhanced models: {e}")
+    print("[INFO] The app will run in basic mode with fallback analysis")
     MODELS_AVAILABLE = False
 
 app = Flask(__name__)
@@ -62,24 +62,24 @@ def load_ml_models():
     
     try:
         if MODELS_AVAILABLE:
-            print("🚀 Loading Enhanced ML Pipeline...")
+            print("[LOADING] Loading Enhanced ML Pipeline...")
             ml_pipeline = IntegratedMLPipeline()
             model_loading_status = {'loaded': True, 'error': None}
-            print("✅ Enhanced ML Pipeline loaded successfully!")
+            print("[SUCCESS] Enhanced ML Pipeline loaded successfully!")
             
             # Test the pipeline with a simple text
             test_result = ml_pipeline.analyze_text("Great app, love the interface!")
-            print(f"🧪 Test analysis complete: {test_result.get('sentiment', 'unknown')} sentiment")
+            print(f"[TEST] Test analysis complete: {test_result.get('sentiment', 'unknown')} sentiment")
             
         else:
             model_loading_status = {'loaded': False, 'error': 'Enhanced models not available'}
-            print("⚠️ Running without enhanced models - using fallback mode")
+            print("[WARNING] Running without enhanced models - using fallback mode")
             
     except Exception as e:
         error_msg = f"Failed to load ML models: {str(e)}"
         model_loading_status = {'loaded': False, 'error': error_msg}
         logger.error(error_msg)
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
 
 # Load models when module imports (works with Gunicorn)
 load_ml_models()
@@ -139,13 +139,13 @@ def analyze_text():
                 # Use YOUR enhanced pipeline
                 result = ml_pipeline.analyze_text(text, language)
                 analysis_type = 'Enhanced Multi-Label Analysis'
-                print(f"✅ Enhanced analysis complete for: '{text[:50]}...'")
+                print(f"[SUCCESS] Enhanced analysis complete for: '{text[:50]}...'")
                 
             else:
                 # Basic fallback
                 result = basic_analysis_fallback(text)
                 analysis_type = 'Basic Analysis (Enhanced Models Not Available)'
-                print(f"⚠️ Fallback analysis used for: '{text[:50]}...'")
+                print(f"[WARNING] Fallback analysis used for: '{text[:50]}...'")
             
             processing_time = time.time() - start_time
             result['processing_time'] = processing_time
@@ -188,7 +188,7 @@ def upload_file():
                 file.save(filepath)
                 
                 # Process file with YOUR models
-                print(f"🔄 Processing uploaded file: {filename}")
+                print(f"[INFO] Processing uploaded file: {filename}")
                 results = process_uploaded_file_with_your_models(filepath)
                 
                 return render_template('batch_results.html',
@@ -280,11 +280,11 @@ def process_uploaded_file_with_your_models(filepath):
         if not text_column:
             raise ValueError("No text column found in file")
         
-        print(f"📊 Processing {len(df)} reviews using column: {text_column}")
+        print(f"[INFO] Processing {len(df)} reviews using column: {text_column}")
         
         # Process with YOUR ML pipeline
         if ml_pipeline and model_loading_status['loaded']:
-            print("🚀 Using enhanced models for batch processing...")
+            print("[INFO] Using enhanced models for batch processing...")
             
             # Process each row
             results = []
@@ -302,7 +302,7 @@ def process_uploaded_file_with_your_models(filepath):
             business_intelligence = generate_business_intelligence_from_results(results)
             
         else:
-            print("⚠️ Using basic fallback for batch processing...")
+            print("[WARNING] Using basic fallback for batch processing...")
             results = []
             business_intelligence = {'message': 'Enhanced models required for full analysis'}
         
@@ -411,24 +411,24 @@ def internal_error(error):
     return render_template('500.html', model_status=model_loading_status), 500
 
 if __name__ == '__main__':
-    print("🚀 Starting Enhanced Flask App for Multilingual Sentiment Analysis")
+    print("[INFO] Starting Enhanced Flask App for Multilingual Sentiment Analysis")
     print("=" * 70)
     
-    print("\n🎯 System Status:")
+    print("\n[STATUS] System Status:")
     if model_loading_status['loaded']:
-        print("   ✅ Enhanced Sentiment Classifier")
-        print("   ✅ Multi-Label Aspect Classifier")
-        print("   ✅ Integrated ML Pipeline")
-        print("   ✅ Business Intelligence Generation")
-        print("   ⚡ Ready for production-level analysis!")
+        print("   [SUCCESS] Enhanced Sentiment Classifier")
+        print("   [SUCCESS] Multi-Label Aspect Classifier")
+        print("   [SUCCESS] Integrated ML Pipeline")
+        print("   [SUCCESS] Business Intelligence Generation")
+        print("   [SUCCESS] Ready for production-level analysis!")
     else:
-        print("   ⚠️ Running in fallback mode")
+        print("   [WARNING] Running in fallback mode")
         if model_loading_status['error']:
-            print(f"   ❌ Error: {model_loading_status['error']}")
+            print(f"   [ERROR] Error: {model_loading_status['error']}")
     
-    print(f"\n🌍 Starting server at: http://localhost:5000")
-    print("📊 Features: Multi-label Classification, Business Intelligence, Real-time Processing")
-    print("🌐 Languages: English, Spanish, German, French, Dutch")
+    print(f"\n[INFO] Starting server at: http://localhost:5000")
+    print("[INFO] Features: Multi-label Classification, Business Intelligence, Real-time Processing")
+    print("[INFO] Languages: English, Spanish, German, French, Dutch")
     print("=" * 70)
     
     app.run(debug=True, host='0.0.0.0', port=5000)
