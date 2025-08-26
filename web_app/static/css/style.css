@@ -289,10 +289,16 @@ body {
 
 /* Model Info Display */
 .model-info {
-    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
-    border-radius: 8px;
-    padding: 1rem;
-    border: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #212529, #343a40);  /* Dark gradient */
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.model-info .status-indicator.status-loaded {
+    background-color: var(--success-color);
+    color: white;
 }
 
 /* Batch Results Table */
@@ -374,3 +380,29 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #0056b3;
 }
+
+/* Modern Pill Badge Style for Nav Status */
+.nav-status-pill {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    color: #333;
+    padding: 0.35rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    margin-left: 1rem;
+}
+
+.nav-status-pill.success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.nav-status-pill.warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+}
+

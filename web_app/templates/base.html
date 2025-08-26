@@ -59,11 +59,11 @@
                 <!-- Model Status Indicator -->
                 <div class="navbar-nav">
                     {% if model_status and model_status.loaded %}
-                        <span class="nav-link text-success">
+                        <span class="nav-status-pill success">
                             <i class="bi bi-check-circle-fill me-1"></i>Enhanced Models
                         </span>
                     {% else %}
-                        <span class="nav-link text-warning">
+                        <span class="nav-status-pill warning">
                             <i class="bi bi-exclamation-triangle-fill me-1"></i>Basic Mode
                         </span>
                     {% endif %}
