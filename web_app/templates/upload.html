@@ -1211,38 +1211,19 @@
         currentFile = null;
     }
     
-    // Enhanced form submission with progress tracking
+    // Enhanced form submission with normal form redirect
     uploadForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
         if (!currentFile) {
+            e.preventDefault();
             showNotification('Please select a file first', 'error');
             return;
         }
         
+        // Show processing overlay and let form submit normally
         startProcessing();
         
-        const formData = new FormData(this);
-        
-        fetch(this.action || window.location.href, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                completeProcessing();
-                setTimeout(() => {
-                    window.location.href = response.url;
-                }, 1500);
-            } else {
-                throw new Error(`Upload failed with status ${response.status}`);
-            }
-        })
-        .catch(error => {
-            stopProcessing();
-            showNotification('Upload failed: ' + error.message, 'error');
-            console.error('Upload error:', error);
-        });
+        // Don't prevent default form submission - Flask will handle the redirect
+        // The browser will navigate to the batch results page automatically
     });
     
     function startProcessing() {
