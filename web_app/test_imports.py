@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Import Test Script for Flask App
-Save as: web_app/test_imports.py
+CORRECTED Import Test Script for Flask App
+Save this as: web_app/test_imports.py (replacing the old one)
 Run from web_app directory: python test_imports.py
 """
 
@@ -39,13 +39,13 @@ def test_imports():
     print(f"   Project root exists: {project_root.exists()}")
     print(f"   src/ exists: {src_path.exists()}")
     print(f"   src/models/ exists: {(src_path / 'models').exists()}")
-    print(f"   src/pipelines/ exists: {(src_path / 'pipelines').exists()}")
+    print(f"   web_app/ exists: {(project_root / 'web_app').exists()}")
     
-    # Check specific files
+    # Check specific files - CORRECTED PATHS
     files_to_check = [
         src_path / 'models' / 'enhanced_sentiment_classifier.py',
         src_path / 'models' / 'enhanced_aspect_classifier.py',
-        src_path / 'pipelines' / 'integrated_ml_pipeline.py'
+        src_path / 'integrated_ml_pipeline.py'  # ← FIXED: Correct path!
     ]
     
     print(f"\n📄 Required Files Check:")
@@ -61,7 +61,7 @@ def test_imports():
         print("\n❌ Some required files are missing!")
         return False
     
-    # Test imports
+    # Test imports - CORRECTED IMPORTS
     print(f"\n🧪 Testing Model Imports:")
     import_success = True
     
@@ -86,7 +86,8 @@ def test_imports():
         import_success = False
     
     try:
-        from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
+        # FIXED: Correct import path!
+        from src.integrated_ml_pipeline import IntegratedMLPipeline
         print("   ✅ Integrated ML Pipeline imported successfully")
     except ImportError as e:
         print(f"   ❌ Integrated ML Pipeline failed: {e}")
@@ -105,9 +106,11 @@ def test_imports():
         # Test if app.py can be imported (without running it)
         import importlib.util
         app_path = current_dir / 'app.py'
+        if not app_path.exists():
+            app_path = project_root / 'app.py'  # Check root directory too
+            
         if app_path.exists():
-            print(f"   ✅ app.py exists")
-            # We won't actually import app.py as it would start the server
+            print(f"   ✅ app.py exists at {app_path}")
             print(f"   📋 Ready to test Flask app startup")
         else:
             print(f"   ❌ app.py not found")
@@ -122,7 +125,8 @@ def test_imports():
     if import_success:
         print(f"\n🤖 Testing Model Functionality:")
         try:
-            from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
+            # FIXED: Correct import path!
+            from src.integrated_ml_pipeline import IntegratedMLPipeline
             
             print("   Loading pipeline...")
             pipeline = IntegratedMLPipeline()

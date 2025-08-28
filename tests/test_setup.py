@@ -64,7 +64,7 @@ def test_pure_multilabel_imports():
         print("✅ Pure multi-label aspect classifier imported")
         
         # Test pure multi-label integrated pipeline - FIXED
-        from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
+        from src.integrated_ml_pipeline import IntegratedMLPipeline
         print("✅ Pure multi-label integrated pipeline imported")
         
         return True
@@ -74,7 +74,7 @@ def test_pure_multilabel_imports():
         print("📂 Check that files exist:")
         print("   - src/models/enhanced_sentiment_classifier.py")
         print("   - src/models/enhanced_aspect_classifier.py") 
-        print("   - src/pipelines/integrated_ml_pipeline.py")
+        print("   - src/integrated_ml_pipeline.py")
         return False
 
 def test_pure_multilabel_initialization():
@@ -97,7 +97,7 @@ def test_pure_multilabel_initialization():
         
         # Test pure multi-label integrated pipeline - FIXED
         print("🔗 Initializing pure multi-label integrated pipeline...")
-        from src.pipelines.integrated_ml_pipeline import IntegratedMLPipeline
+        from src.integrated_ml_pipeline import IntegratedMLPipeline
         pipeline = IntegratedMLPipeline()
         print("✅ Pure multi-label integrated pipeline initialized")
         
