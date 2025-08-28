@@ -374,6 +374,21 @@
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
     }
+    
+    .animate-in {
+        animation: slideInUp 0.6s ease forwards;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -536,7 +551,7 @@
             </div>
         </div>
         
-        <!-- Mixed Concerns -->
+        <!-- Mixed Concerns - FIXED to show percentage -->
         <div class="col-lg-2 col-md-4 col-sm-6">
             <div class="metric-card">
                 <div class="metric-value text-warning" id="mixedConcerns" data-target="{{ data.mixed_concerns_pct|replace('%', '') if data else 0 }}">
@@ -547,7 +562,7 @@
             </div>
         </div>
         
-        <!-- UX Priority -->
+        <!-- UX Priority - FIXED to show percentage -->
         <div class="col-lg-2 col-md-4 col-sm-6">
             <div class="metric-card">
                 <div class="metric-value text-info" id="uxPriority" data-target="{{ data.ux_priority_pct|replace('%', '') if data else 0 }}">
@@ -558,7 +573,7 @@
             </div>
         </div>
         
-        <!-- High Priority -->
+        <!-- High Priority - FIXED to show percentage -->
         <div class="col-lg-2 col-md-4 col-sm-6">
             <div class="metric-card">
                 <div class="metric-value text-danger" id="highPriority" data-target="{{ data.high_priority_pct|replace('%', '') if data else 0 }}">
@@ -894,6 +909,7 @@
             renderAllChartsEnhanced();
             updateInsightsWithAI();
             animateMetrics();
+            verifyDataConsistency();
         } else {
             renderPlaceholderCharts();
         }
@@ -973,7 +989,12 @@
             const current = parseInt(metric.textContent.replace(/[^\d]/g, '')) || 0;
             
             if (target > 0 && current !== target) {
-                animateNumber(metric, current, target, 2000);
+                const id = metric.id;
+                if (id !== 'totalReviews') {
+                    animateNumberWithSuffix(metric, current, target, '%', 2000);
+                } else {
+                    animateNumber(metric, current, target, 2000);
+                }
             }
         });
         
@@ -1010,8 +1031,50 @@
         requestAnimationFrame(update);
     }
     
+    // FIXED: Animation function that handles suffixes like %
+    function animateNumberWithSuffix(element, start, end, suffix, duration) {
+        const startTime = Date.now();
+        
+        function update() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const current = Math.round(start + (end - start) * easeOutCubic(progress));
+            
+            element.textContent = current + suffix;
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+    
     function easeOutCubic(t) {
         return 1 - Math.pow(1 - t, 3);
+    }
+    
+    // FIXED: Data consistency verification
+    function verifyDataConsistency() {
+        if (!currentData) return;
+        
+        const totalReviews = currentData.total_reviews || 0;
+        const highPriorityPct = parseFloat(currentData.high_priority_pct?.replace('%', '')) || 0;
+        const mixedPct = parseFloat(currentData.mixed_concerns_pct?.replace('%', '')) || 0;
+        const uxPct = parseFloat(currentData.ux_priority_pct?.replace('%', '')) || 0;
+        
+        // Calculate what the charts should show
+        const expectedHighPriorityCount = Math.round((highPriorityPct / 100) * totalReviews);
+        const actualHighPriorityCount = currentData.priority_levels?.HIGH || 0;
+        
+        console.log('DATA CONSISTENCY CHECK:');
+        console.log(`Total Reviews: ${totalReviews}`);
+        console.log(`KPI High Priority: ${highPriorityPct}%`);
+        console.log(`Expected count: ${expectedHighPriorityCount}`);
+        console.log(`Chart shows count: ${actualHighPriorityCount}`);
+        console.log(`Consistency: ${expectedHighPriorityCount === actualHighPriorityCount ? '✅ MATCH' : '❌ MISMATCH'}`);
+        
+        return expectedHighPriorityCount === actualHighPriorityCount;
     }
     
     function checkForUpdates() {
@@ -1070,6 +1133,7 @@
                     updateMetricsAnimated();
                     renderAllChartsEnhanced();
                     updateInsightsWithAI();
+                    verifyDataConsistency();
                     
                     showNotification('Dashboard updated with fresh AI analysis!', 'success');
                 } else {
@@ -1128,17 +1192,29 @@
         }
     }
     
+    // FIXED: Ensure consistent data sources between KPIs and charts
     function updateMetricsAnimated() {
         if (!currentData) return;
         
+        console.log('Updating KPIs with consistent data:', currentData);
+        
+        // Extract percentages consistently - all KPIs should show percentages
+        const mixedPct = parseFloat(currentData.mixed_concerns_pct?.replace('%', '')) || 0;
+        const uxPct = parseFloat(currentData.ux_priority_pct?.replace('%', '')) || 0;
+        const highPct = parseFloat(currentData.high_priority_pct?.replace('%', '')) || 0;
+        const posPct = currentData.sentiment_distribution?.positive || 0;
+        const ensemblePct = parseFloat(currentData.ensemble_metrics?.ensemble_usage_pct?.replace('%', '')) || 0;
+        
         const updates = {
             'totalReviews': currentData.total_reviews || 0,
-            'mixedConcerns': parseInt(currentData.mixed_concerns_pct) || 0,
-            'uxPriority': parseInt(currentData.ux_priority_pct) || 0,
-            'highPriority': parseInt(currentData.high_priority_pct) || 0,
-            'positiveSentiment': currentData.sentiment_distribution?.positive || 0,
-            'ensemblePerformance': parseInt(currentData.ensemble_metrics?.ensemble_usage_pct) || 0
+            'mixedConcerns': mixedPct,      // This should show as percentage
+            'uxPriority': uxPct,            // This should show as percentage  
+            'highPriority': highPct,        // FIXED: This should show as percentage
+            'positiveSentiment': posPct,    // This should show as percentage
+            'ensemblePerformance': ensemblePct  // This should show as percentage
         };
+        
+        console.log('KPI updates with consistent percentages:', updates);
         
         Object.entries(updates).forEach(([id, newValue]) => {
             const element = document.getElementById(id);
@@ -1146,29 +1222,31 @@
                 const currentValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
                 if (currentValue !== newValue) {
                     element.setAttribute('data-target', newValue);
-                    animateNumber(element, currentValue, newValue, 1500);
+                    
+                    // FIXED: Add % symbol for percentage KPIs
+                    if (id !== 'totalReviews') {
+                        animateNumberWithSuffix(element, currentValue, newValue, '%', 1500);
+                    } else {
+                        animateNumber(element, currentValue, newValue, 1500);
+                    }
                 }
             }
         });
     }
     
-    // =====================================================================
     // FIXED BUSINESS INSIGHTS BASED ON ACTUAL DATA
-    // =====================================================================
     function updateInsightsWithAI() {
         if (!currentData) return;
         
         // Get ACTUAL percentages (not impossible values)
-        const mixedPct = parseFloat(currentData.mixed_concerns_pct) || 0;
-        const uxPct = parseFloat(currentData.ux_priority_pct) || 0;
-        const highPct = parseFloat(currentData.high_priority_pct) || 0;
+        const mixedPct = parseFloat(currentData.mixed_concerns_pct?.replace('%', '')) || 0;
+        const uxPct = parseFloat(currentData.ux_priority_pct?.replace('%', '')) || 0;
+        const highPct = parseFloat(currentData.high_priority_pct?.replace('%', '')) || 0;
         const posPct = currentData.sentiment_distribution?.positive || 0;
         
         console.log('FIXED Business insights using actual percentages:', {mixedPct, uxPct, highPct, posPct});
         
-        // =====================================================================
-        // FIXED UX INSIGHT (Based on actual 6.7%)
-        // =====================================================================
+        // FIXED UX INSIGHT (Based on actual percentages)
         const uxInsight = document.getElementById('uxInsight');
         const uxRecommendation = document.getElementById('uxRecommendation');
         const uxConfidence = document.getElementById('uxConfidence');
@@ -1187,9 +1265,7 @@
             uxConfidence.style.width = '85%';
         }
         
-        // =====================================================================
-        // FIXED MIXED CONCERNS INSIGHT (Based on actual 2.2%)
-        // =====================================================================
+        // FIXED MIXED CONCERNS INSIGHT
         const mixedInsight = document.getElementById('mixedInsight');
         const mixedRecommendation = document.getElementById('mixedRecommendation');
         const mixedConfidence = document.getElementById('mixedConfidence');
@@ -1198,9 +1274,7 @@
         mixedRecommendation.textContent = mixedPct > 5 ? 'IMPROVE: Enhance cross-functional communication workflows' : 'EXCELLENT: Current coordination levels are highly effective';
         mixedConfidence.style.width = `${Math.min(90, 70 + (mixedPct * 2))}%`;
         
-        // =====================================================================
-        // FIXED PERFORMANCE INSIGHT (Based on actual 6.0%)
-        // =====================================================================
+        // FIXED PERFORMANCE INSIGHT
         const performanceInsight = document.getElementById('performanceInsight');
         const performanceRecommendation = document.getElementById('performanceRecommendation');
         const performanceConfidence = document.getElementById('performanceConfidence');
@@ -1219,9 +1293,7 @@
             performanceConfidence.style.width = '90%';
         }
         
-        // =====================================================================
-        // FIXED STRENGTH ANALYSIS (Based on actual 19%)
-        // =====================================================================
+        // FIXED STRENGTH ANALYSIS
         const strengthInsight = document.getElementById('strengthInsight');
         const strengthRecommendation = document.getElementById('strengthRecommendation');
         const strengthConfidence = document.getElementById('strengthConfidence');
@@ -1304,7 +1376,7 @@
         
         // Ensemble-specific recommendations (only if data available)
         if (currentData.ensemble_metrics) {
-            const ensembleUsage = parseInt(currentData.ensemble_metrics.ensemble_usage_pct) || 0;
+            const ensembleUsage = parseInt(currentData.ensemble_metrics.ensemble_usage_pct?.replace('%', '')) || 0;
             if (ensembleUsage < 50) {
                 actions.push({
                     priority: 'medium',
@@ -1349,9 +1421,7 @@
         }
     }
     
-    // =====================================================================
     // FIXED CHART RENDERING WITH CORRECT COLORS
-    // =====================================================================
     function renderAllChartsEnhanced() {
         console.log('Rendering charts with FIXED colors and currentData:', currentData);
         
@@ -1392,6 +1462,20 @@
                 : {"Single Aspect": 45, "Dual Aspect": 35, "Mixed Concerns": 20}
         };
         
+        // FIXED: Ensure priority chart uses same percentages as KPIs
+        if (currentData && currentData.priority_levels) {
+            const total = currentData.total_reviews || 1;
+            
+            // Convert raw counts to percentages if needed
+            const priorityData = {};
+            Object.entries(currentData.priority_levels).forEach(([level, count]) => {
+                priorityData[level] = Math.round((count / total) * 100);
+            });
+            
+            console.log('Priority chart percentages (should match KPIs):', priorityData);
+            dashboardData.priorities = priorityData;
+        }
+        
         console.log('Final dashboard data for charts:', dashboardData);
         renderChartsWithEnhancements(dashboardData);
     }
@@ -1416,17 +1500,29 @@
         
         console.log('Rendering charts with FIXED COLORS and data:', dashboardData);
         
-        // =====================================================================
-        // SENTIMENT CHART - FIXED COLORS AND VALIDATION
-        // =====================================================================
+        // FIXED SENTIMENT CHART - EXPLICIT COLOR MAPPING
+        const sentimentLabels = Object.keys(dashboardData.sentiment).map(k => k.charAt(0).toUpperCase() + k.slice(1));
+        const sentimentValues = Object.values(dashboardData.sentiment);
+
+        // Create color mapping that explicitly assigns colors regardless of data order
+        const sentimentColors = sentimentLabels.map(label => {
+            switch(label.toLowerCase()) {
+                case 'positive': return '#198754';  // Green for positive
+                case 'negative': return '#dc3545';  // Red for negative  
+                case 'neutral': return '#6c757d';   // Gray for neutral
+                default: return '#6c757d';          // Default to gray
+            }
+        });
+
+        console.log('Sentiment color mapping:', sentimentLabels.map((label, i) => `${label}=${sentimentColors[i]}`));
+
         const sentimentData = [{
-            values: Object.values(dashboardData.sentiment),
-            labels: Object.keys(dashboardData.sentiment).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+            values: sentimentValues,
+            labels: sentimentLabels,
             type: 'pie',
             hole: 0.5,
             marker: {
-                // FIXED COLORS: Green=Positive, Red=Negative, Gray=Neutral
-                colors: ['#198754', '#dc3545', '#6c757d'], 
+                colors: sentimentColors,  // Use the explicitly mapped colors
                 line: { color: '#ffffff', width: 3 }
             },
             textinfo: 'label+percent',
@@ -1436,7 +1532,7 @@
         }];
         
         // Validate sentiment percentages don't exceed 100%
-        const sentimentTotal = Object.values(dashboardData.sentiment).reduce((a, b) => a + b, 0);
+        const sentimentTotal = sentimentValues.reduce((a, b) => a + b, 0);
         if (sentimentTotal > 100) {
             console.error('VALIDATION ERROR: Sentiment percentages exceed 100%:', sentimentTotal);
         } else {
@@ -1468,9 +1564,7 @@
         
         Plotly.newPlot('sentimentChart', sentimentData, sentimentLayout, chartConfig);
         
-        // =====================================================================
         // ASPECT CHART - FIXED
-        // =====================================================================
         const aspectLabels = Object.keys(dashboardData.aspects).map(k => 
             k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
         );
@@ -1512,9 +1606,7 @@
         
         Plotly.newPlot('aspectChart', aspectData, aspectLayout, chartConfig);
         
-        // =====================================================================
-        // PRIORITY CHART - FIXED COLORS
-        // =====================================================================
+        // FIXED PRIORITY CHART - EXPLICIT COLOR MAPPING
         const priorityLabels = Object.keys(dashboardData.priorities);
         const priorityValues = Object.values(dashboardData.priorities);
         
@@ -1568,9 +1660,7 @@
         
         Plotly.newPlot('priorityChart', priorityData, priorityLayout, chartConfig);
         
-        // =====================================================================
         // LANGUAGE CHART - FIXED
-        // =====================================================================
         const languageLabels = Object.keys(dashboardData.languages).map(k => k.toUpperCase());
         const languageValues = Object.values(dashboardData.languages);
         
@@ -1609,9 +1699,7 @@
         
         Plotly.newPlot('languageChart', languageData, languageLayout, chartConfig);
         
-        // =====================================================================
         // CLASSIFICATION CHART - FIXED
-        // =====================================================================
         const classificationLabels = Object.keys(dashboardData.classification);
         const classificationValues = Object.values(dashboardData.classification);
         
@@ -1788,25 +1876,5 @@
             clearInterval(autoRefreshInterval);
         }
     });
-    
-    // Add CSS animations
-    const style = document.createElement('style');
-    style.textContent = `
-        .animate-in {
-            animation: slideInUp 0.6s ease forwards;
-        }
-        
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    `;
-    document.head.appendChild(style);
 </script>
 {% endblock %}
