@@ -452,46 +452,70 @@ def run_fedex_analysis_background(target_reviews=500):
 
 # NEW: Get latest analysis data with latest time prioritization
 def get_latest_analysis_data():
-    """Get the most recent analysis data - newest file has highest priority"""
+    """Get the most recent analysis data - FIXED VERSION"""
     data_sources = []
     
     # Find all CSV files in both directories
     data_dir = Path(app.config['DATA_FOLDER'])
     cache_dir = Path(app.config['CACHE_FOLDER'])
     
+    print(f"[DEBUG] Searching for data files...")
+    print(f"[DEBUG] Data dir: {data_dir}")
+    print(f"[DEBUG] Cache dir: {cache_dir}")
+    
     # Collect all CSV files with their types and modification times
     for directory in [data_dir, cache_dir]:
         if directory.exists():
-            # FedEx ensemble files
+            print(f"[DEBUG] Checking directory: {directory}")
+            
+            # FedEx ensemble files (highest priority)
             for f in directory.glob('fedex_reviews_enhanced_ensemble_*.csv'):
+                print(f"[DEBUG] Found FedEx ensemble file: {f.name}")
                 data_sources.append((f, 'FedEx Real Data', f.stat().st_mtime))
             
             # Regular FedEx files (exclude ensemble to avoid duplicates)
             for f in directory.glob('fedex_reviews_*.csv'):
                 if 'enhanced_ensemble' not in f.name:
+                    print(f"[DEBUG] Found FedEx file: {f.name}")
                     data_sources.append((f, 'FedEx Data', f.stat().st_mtime))
             
             # Ensemble results
             for f in directory.glob('results_ensemble_*.csv'):
+                print(f"[DEBUG] Found ensemble results: {f.name}")
                 data_sources.append((f, 'Ensemble Results', f.stat().st_mtime))
             
-            # Regular results
+            # Regular results  
             for f in directory.glob('results_*.csv'):
+                print(f"[DEBUG] Found regular results: {f.name}")
                 data_sources.append((f, 'Analysis Results', f.stat().st_mtime))
+        else:
+            print(f"[DEBUG] Directory does not exist: {directory}")
+    
+    if not data_sources:
+        print("[DEBUG] No CSV files found in expected locations")
+        return None, True
     
     # Sort by modification time - NEWEST FIRST (highest priority)
     data_sources.sort(key=lambda x: x[2], reverse=True)
+    
+    print(f"[DEBUG] Found {len(data_sources)} potential data files:")
+    for i, (path, source, mtime) in enumerate(data_sources[:3]):  # Show top 3
+        file_time = datetime.fromtimestamp(mtime)
+        print(f"[DEBUG]   {i+1}. {source}: {path.name} ({file_time})")
     
     # Try to load files in order (newest first)
     for data_path, source_name, mtime in data_sources:
         if data_path.exists():
             try:
+                print(f"[DEBUG] Attempting to load: {data_path.name}")
+                
                 # Enhanced CSV reading with better error handling
                 df = pd.read_csv(data_path, encoding='utf-8')
+                print(f"[DEBUG] Successfully read {len(df)} rows, {len(df.columns)} columns")
                 
-                # Skip files with malformed data or wrong structure
-                if len(df.columns) < 5:  # Basic sanity check
-                    logger.warning(f"Skipping {data_path.name} - appears to have malformed columns")
+                # RELAXED validation - be less strict about column requirements
+                if len(df.columns) < 3:  # Very basic sanity check
+                    print(f"[WARNING] Skipping {data_path.name} - too few columns ({len(df.columns)})")
                     continue
                 
                 # Check if this looks like a properly formatted file
@@ -499,27 +523,45 @@ def get_latest_analysis_data():
                 has_predicted_cols = any(col.startswith('predicted_') for col in df.columns)
                 has_original_cols = any(col in df.columns for col in expected_cols)
                 
-                if not (has_original_cols or has_predicted_cols):
-                    logger.warning(f"Skipping {data_path.name} - missing expected columns")
+                # IMPROVED: Also check for partial matches
+                has_some_expected = any(
+                    any(expected in col.lower() for expected in ['sentiment', 'aspect', 'classification', 'priority'])
+                    for col in df.columns
+                )
+                
+                if not (has_original_cols or has_predicted_cols or has_some_expected):
+                    print(f"[WARNING] Skipping {data_path.name} - missing expected columns")
+                    print(f"[DEBUG] Available columns: {list(df.columns)[:10]}...")
                     continue
                 
-                if len(df) > 0:
-                    data = generate_dashboard_data(df)
-                    data['source'] = source_name
-                    data['file_path'] = str(data_path)
-                    data['file_age'] = datetime.now() - datetime.fromtimestamp(data_path.stat().st_mtime)
-                    data['is_fedex_data'] = 'fedex' in data_path.name.lower()
-                    
-                    # Log which file was actually loaded with timestamp
-                    file_time = datetime.fromtimestamp(mtime)
-                    logger.info(f"Dashboard loaded: {source_name} from {data_path.name} ({len(df)} reviews) - Modified: {file_time}")
-                    return data, False  # Not demo mode
-                    
+                if len(df) == 0:
+                    print(f"[WARNING] Skipping {data_path.name} - empty dataframe")
+                    continue
+                
+                print(f"[SUCCESS] Loading data from: {data_path.name}")
+                print(f"[DEBUG] Columns found: {list(df.columns)}")
+                
+                # Generate dashboard data
+                data = generate_dashboard_data(df)
+                data['source'] = source_name
+                data['file_path'] = str(data_path)
+                data['file_age'] = datetime.now() - datetime.fromtimestamp(data_path.stat().st_mtime)
+                data['is_fedex_data'] = 'fedex' in data_path.name.lower()
+                
+                # Log which file was actually loaded with timestamp
+                file_time = datetime.fromtimestamp(mtime)
+                logger.info(f"Dashboard loaded: {source_name} from {data_path.name} ({len(df)} reviews) - Modified: {file_time}")
+                print(f"[SUCCESS] Dashboard will show {data['total_reviews']} reviews from {source_name}")
+                
+                return data, False  # Not demo mode
+                
             except Exception as e:
+                print(f"[ERROR] Could not load {data_path}: {e}")
                 logger.warning(f"Could not load {data_path}: {e}")
                 continue
     
     # No data found
+    print("[WARNING] No valid data files found - using demo mode")
     logger.info("No valid data files found - using demo mode")
     return None, True
 
@@ -1200,81 +1242,244 @@ def calculate_ensemble_metrics(df):
 
 # ENHANCED FUNCTION (works with both existing and FedEx data)
 def generate_dashboard_data(df):
-    """Generate dashboard data from dataframe with ensemble metrics"""
+    """COMPLETELY FIXED: Generate dashboard data with correct percentages and validation"""
+    
+    print(f"[DEBUG] Generating dashboard data from {len(df)} rows")
+    
+    # Initialize with defaults
     data = {
         'total_reviews': len(df),
-        'mixed_concerns_pct': '0',
-        'ux_priority_pct': '0',
-        'high_priority_pct': '0',
-        'sentiment_distribution': {'positive': 33, 'negative': 33, 'neutral': 34},
+        'mixed_concerns_pct': '0.0',
+        'ux_priority_pct': '0.0',
+        'high_priority_pct': '0.0',
+        'sentiment_distribution': {'positive': 0, 'negative': 0, 'neutral': 0},
+        'aspect_distribution': {},
+        'priority_levels': {},
+        'language_distribution': {},
+        'classification_distribution': {},
         'ensemble_metrics': {
-            'ensemble_usage_pct': '0',
-            'cache_hit_rate_pct': '0',
-            'avg_processing_time_ms': '0',
-            'models_used_avg': '0'
+            'ensemble_usage_pct': '0.0',
+            'cache_hit_rate_pct': '0.0',
+            'avg_processing_time_ms': '0.0',
+            'models_used_avg': '0.0'
         }
     }
     
-    # Update with actual data if available - supports both formats
-    if 'predicted_classification_type' in df.columns:
-        mixed = (df['predicted_classification_type'] == 'mixed_concerns').mean() * 100
-        data['mixed_concerns_pct'] = f"{mixed:.1f}"
-    elif 'classification_type' in df.columns:  # FedEx format
-        mixed = (df['classification_type'] == 'mixed_concerns').mean() * 100
-        data['mixed_concerns_pct'] = f"{mixed:.1f}"
+    print(f"[DEBUG] Available columns: {list(df.columns)}")
     
-    if 'predicted_primary_aspect' in df.columns:
-        ux = (df['predicted_primary_aspect'] == 'user_experience').mean() * 100
-        data['ux_priority_pct'] = f"{ux:.1f}"
-    elif 'primary_aspect' in df.columns:  # FedEx format
-        ux = (df['primary_aspect'] == 'user_experience').mean() * 100
-        data['ux_priority_pct'] = f"{ux:.1f}"
-    
-    if 'predicted_priority_level' in df.columns:
-        high = (df['predicted_priority_level'] == 'HIGH').mean() * 100
-        data['high_priority_pct'] = f"{high:.1f}"
-    elif 'priority_level' in df.columns:  # FedEx format
-        high = (df['priority_level'] == 'HIGH').mean() * 100
-        data['high_priority_pct'] = f"{high:.1f}"
-    
-    if 'predicted_sentiment' in df.columns:
-        sentiments = df['predicted_sentiment'].value_counts(normalize=True) * 100
-        data['sentiment_distribution'] = {
-            'positive': int(sentiments.get('positive', 0)),
-            'negative': int(sentiments.get('negative', 0)),
-            'neutral': int(sentiments.get('neutral', 0))
+    try:
+        total_reviews = len(df)
+        
+        # =====================================================================
+        # SENTIMENT DISTRIBUTION (FIXED PERCENTAGES)
+        # =====================================================================
+        sentiment_cols = ['predicted_sentiment', 'sentiment']
+        sentiment_col = None
+        for col in sentiment_cols:
+            if col in df.columns:
+                sentiment_col = col
+                break
+        
+        if sentiment_col:
+            sentiment_counts = df[sentiment_col].value_counts()
+            
+            # Calculate percentages correctly (as integers, not raw counts)
+            pos_count = sentiment_counts.get('positive', 0)
+            neg_count = sentiment_counts.get('negative', 0)
+            neu_count = sentiment_counts.get('neutral', 0)
+            
+            pos_pct = int((pos_count / total_reviews) * 100) if total_reviews > 0 else 0
+            neg_pct = int((neg_count / total_reviews) * 100) if total_reviews > 0 else 0
+            neu_pct = int((neu_count / total_reviews) * 100) if total_reviews > 0 else 0
+            
+            # Ensure percentages add up to 100% (handle rounding)
+            total_pct = pos_pct + neg_pct + neu_pct
+            if total_pct != 100 and total_reviews > 0:
+                # Adjust the largest category to make it sum to 100
+                if pos_count >= neg_count and pos_count >= neu_count:
+                    pos_pct += (100 - total_pct)
+                elif neg_count >= neu_count:
+                    neg_pct += (100 - total_pct)
+                else:
+                    neu_pct += (100 - total_pct)
+            
+            data['sentiment_distribution'] = {
+                'positive': pos_pct,
+                'negative': neg_pct,
+                'neutral': neu_pct
+            }
+            
+            print(f"[DEBUG] Sentiment - Positive: {pos_count} ({pos_pct}%), Negative: {neg_count} ({neg_pct}%), Neutral: {neu_count} ({neu_pct}%)")
+        
+        # =====================================================================
+        # ASPECT DISTRIBUTION (FIXED)
+        # =====================================================================
+        aspect_cols = ['predicted_primary_aspect', 'primary_aspect', 'aspect']
+        aspect_col = None
+        for col in aspect_cols:
+            if col in df.columns:
+                aspect_col = col
+                break
+        
+        if aspect_col:
+            # Get top 6 aspects for the chart
+            aspect_counts = df[aspect_col].value_counts().head(6)
+            data['aspect_distribution'] = aspect_counts.to_dict()
+            
+            # Calculate UX priority percentage (correctly as percentage, not count)
+            ux_count = (df[aspect_col] == 'user_experience').sum()
+            ux_pct = (ux_count / total_reviews) * 100 if total_reviews > 0 else 0
+            data['ux_priority_pct'] = f"{ux_pct:.1f}"
+            
+            print(f"[DEBUG] UX priority: {ux_count}/{total_reviews} = {ux_pct:.1f}%")
+            print(f"[DEBUG] Top aspects: {dict(aspect_counts)}")
+        
+        # =====================================================================
+        # PRIORITY LEVELS (FIXED)
+        # =====================================================================
+        priority_cols = ['predicted_priority_level', 'priority_level', 'priority']
+        priority_col = None
+        for col in priority_cols:
+            if col in df.columns:
+                priority_col = col
+                break
+        
+        if priority_col:
+            priority_counts = df[priority_col].value_counts()
+            data['priority_levels'] = priority_counts.to_dict()
+            
+            # Calculate high priority percentage (correctly as percentage)
+            high_count = (df[priority_col] == 'HIGH').sum()
+            high_pct = (high_count / total_reviews) * 100 if total_reviews > 0 else 0
+            data['high_priority_pct'] = f"{high_pct:.1f}"
+            
+            print(f"[DEBUG] High priority: {high_count}/{total_reviews} = {high_pct:.1f}%")
+            print(f"[DEBUG] Priority distribution: {dict(priority_counts)}")
+        
+        # =====================================================================
+        # CLASSIFICATION TYPE (FIXED)
+        # =====================================================================
+        classification_cols = ['predicted_classification_type', 'classification_type', 'type']
+        classification_col = None
+        for col in classification_cols:
+            if col in df.columns:
+                classification_col = col
+                break
+        
+        if classification_col:
+            # Map classification types to user-friendly names
+            classification_counts = df[classification_col].value_counts()
+            
+            mixed_count = classification_counts.get('mixed_concerns', 0)
+            dual_count = classification_counts.get('dual_concerns', 0)  
+            single_count = classification_counts.get('single_concern', 0)
+            
+            mixed_pct = (mixed_count / total_reviews) * 100 if total_reviews > 0 else 0
+            data['mixed_concerns_pct'] = f"{mixed_pct:.1f}"
+            
+            # Create classification chart data with user-friendly names
+            data['classification_distribution'] = {
+                'Single Aspect': single_count,
+                'Dual Aspect': dual_count,
+                'Mixed Concerns': mixed_count
+            }
+            
+            print(f"[DEBUG] Mixed concerns: {mixed_count}/{total_reviews} = {mixed_pct:.1f}%")
+            print(f"[DEBUG] Classification: Single={single_count}, Dual={dual_count}, Mixed={mixed_count}")
+        
+        # =====================================================================
+        # LANGUAGE DISTRIBUTION (FIXED)
+        # =====================================================================
+        language_cols = ['language_detected', 'language', 'lang']
+        language_col = None
+        for col in language_cols:
+            if col in df.columns:
+                language_col = col
+                break
+                
+        if language_col:
+            lang_counts = df[language_col].value_counts().head(5)
+            data['language_distribution'] = lang_counts.to_dict()
+            
+            print(f"[DEBUG] Language distribution: {dict(lang_counts)}")
+        
+        # =====================================================================
+        # ENSEMBLE METRICS (FIXED)
+        # =====================================================================
+        ensemble_cols = {
+            'method': ['predicted_sentiment_method', 'sentiment_method'],
+            'cache': ['predicted_sentiment_from_cache', 'sentiment_from_cache'],
+            'models': ['predicted_sentiment_models_used', 'sentiment_models_used']
         }
-    elif 'sentiment' in df.columns:  # FedEx format
-        sentiments = df['sentiment'].value_counts(normalize=True) * 100
-        data['sentiment_distribution'] = {
-            'positive': int(sentiments.get('positive', 0)),
-            'negative': int(sentiments.get('negative', 0)),
-            'neutral': int(sentiments.get('neutral', 0))
-        }
+        
+        # Ensemble usage percentage
+        method_col = None
+        for col in ensemble_cols['method']:
+            if col in df.columns:
+                method_col = col
+                break
+                
+        if method_col:
+            ensemble_count = (df[method_col] == 'two_model_ensemble').sum()
+            ensemble_pct = (ensemble_count / total_reviews) * 100 if total_reviews > 0 else 0
+            data['ensemble_metrics']['ensemble_usage_pct'] = f"{ensemble_pct:.1f}"
+            print(f"[DEBUG] Ensemble usage: {ensemble_count}/{total_reviews} = {ensemble_pct:.1f}%")
+        
+        # Cache hit rate percentage  
+        cache_col = None
+        for col in ensemble_cols['cache']:
+            if col in df.columns:
+                cache_col = col
+                break
+                
+        if cache_col:
+            cache_hits = df[cache_col].sum() if df[cache_col].dtype == bool else (df[cache_col] == True).sum()
+            cache_pct = (cache_hits / total_reviews) * 100 if total_reviews > 0 else 0
+            data['ensemble_metrics']['cache_hit_rate_pct'] = f"{cache_pct:.1f}"
+            print(f"[DEBUG] Cache hit rate: {cache_hits}/{total_reviews} = {cache_pct:.1f}%")
+        
+        # Average models used
+        models_col = None
+        for col in ensemble_cols['models']:
+            if col in df.columns:
+                models_col = col
+                break
+                
+        if models_col:
+            avg_models = df[models_col].mean() if pd.api.types.is_numeric_dtype(df[models_col]) else 0
+            data['ensemble_metrics']['models_used_avg'] = f"{avg_models:.1f}"
+            print(f"[DEBUG] Average models used: {avg_models:.1f}")
+        
+        print(f"[SUCCESS] Generated complete dashboard data for {data['total_reviews']} reviews")
+        print(f"[VALIDATION] Final percentages - Mixed: {data['mixed_concerns_pct']}%, UX: {data['ux_priority_pct']}%, High: {data['high_priority_pct']}%")
+        
+        return data
+        
+    except Exception as e:
+        print(f"[ERROR] Error generating dashboard data: {e}")
+        logger.error(f"Error generating dashboard data: {e}")
+        return data
+
+
+
+# ADDITIONAL DEBUG ROUTE - Add this to your app.py
+@app.route('/debug/dashboard-data')  
+def debug_dashboard_data():
+    """Debug endpoint to see the exact data being sent to frontend"""
+    data, demo_mode = get_latest_analysis_data()
     
-    # Ensemble-specific metrics - supports both formats
-    if 'predicted_sentiment_method' in df.columns:
-        ensemble_usage = (df['predicted_sentiment_method'] == 'two_model_ensemble').mean() * 100
-        data['ensemble_metrics']['ensemble_usage_pct'] = f"{ensemble_usage:.1f}"
-    elif 'sentiment_method' in df.columns:  # FedEx format
-        ensemble_usage = (df['sentiment_method'] == 'two_model_ensemble').mean() * 100
-        data['ensemble_metrics']['ensemble_usage_pct'] = f"{ensemble_usage:.1f}"
-    
-    if 'predicted_sentiment_from_cache' in df.columns:
-        cache_rate = df['predicted_sentiment_from_cache'].mean() * 100
-        data['ensemble_metrics']['cache_hit_rate_pct'] = f"{cache_rate:.1f}"
-    elif 'sentiment_from_cache' in df.columns:  # FedEx format
-        cache_rate = df['sentiment_from_cache'].mean() * 100
-        data['ensemble_metrics']['cache_hit_rate_pct'] = f"{cache_rate:.1f}"
-    
-    if 'predicted_sentiment_models_used' in df.columns:
-        avg_models = df['predicted_sentiment_models_used'].mean()
-        data['ensemble_metrics']['models_used_avg'] = f"{avg_models:.1f}"
-    elif 'sentiment_models_used' in df.columns:  # FedEx format
-        avg_models = df['sentiment_models_used'].mean()
-        data['ensemble_metrics']['models_used_avg'] = f"{avg_models:.1f}"
-    
-    return data
+    return jsonify({
+        'demo_mode': demo_mode,
+        'raw_data': data,
+        'data_keys': list(data.keys()) if data else [],
+        'sentiment_distribution': data.get('sentiment_distribution') if data else None,
+        'aspect_distribution': data.get('aspect_distribution') if data else None,
+        'priority_levels': data.get('priority_levels') if data else None,
+        'language_distribution': data.get('language_distribution') if data else None,
+        'classification_distribution': data.get('classification_distribution') if data else None,
+        'timestamp': datetime.now().isoformat()
+    })
+
 
 # --- ERROR HANDLERS (EXISTING, unchanged) ---
 

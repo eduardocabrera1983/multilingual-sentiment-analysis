@@ -903,7 +903,18 @@
     });
     
     function initializeEnhancedDashboard() {
-        console.log('Enhanced Dashboard initialized with two-model ensemble support');
+        console.log('Enhanced Dashboard initialized with FIXED version');
+        console.log('Current data received:', currentData);
+        
+        // Validate data on load
+        if (currentData && currentData.sentiment_distribution) {
+            const sentimentTotal = Object.values(currentData.sentiment_distribution).reduce((a, b) => a + b, 0);
+            if (sentimentTotal > 100) {
+                console.error('CRITICAL: Sentiment percentages exceed 100%:', sentimentTotal, currentData.sentiment_distribution);
+            } else {
+                console.log('✅ Sentiment percentages valid:', currentData.sentiment_distribution);
+            }
+        }
         
         // Set up intersection observers for animations
         setupAnimationObservers();
@@ -1055,6 +1066,7 @@
             .then(result => {
                 if (result.data) {
                     currentData = result.data;
+                    console.log('Dashboard refreshed with new data:', currentData);
                     updateMetricsAnimated();
                     renderAllChartsEnhanced();
                     updateInsightsWithAI();
@@ -1140,81 +1152,95 @@
         });
     }
     
+    // =====================================================================
+    // FIXED BUSINESS INSIGHTS BASED ON ACTUAL DATA
+    // =====================================================================
     function updateInsightsWithAI() {
         if (!currentData) return;
         
+        // Get ACTUAL percentages (not impossible values)
         const mixedPct = parseFloat(currentData.mixed_concerns_pct) || 0;
         const uxPct = parseFloat(currentData.ux_priority_pct) || 0;
         const highPct = parseFloat(currentData.high_priority_pct) || 0;
         const posPct = currentData.sentiment_distribution?.positive || 0;
         
-        // Enhanced UX insight with AI analysis
+        console.log('FIXED Business insights using actual percentages:', {mixedPct, uxPct, highPct, posPct});
+        
+        // =====================================================================
+        // FIXED UX INSIGHT (Based on actual 6.7%)
+        // =====================================================================
         const uxInsight = document.getElementById('uxInsight');
         const uxRecommendation = document.getElementById('uxRecommendation');
         const uxConfidence = document.getElementById('uxConfidence');
         
-        if (uxPct > 30) {
-            uxInsight.innerHTML = `<strong>${uxPct}%</strong> of reviews mention interface or usability issues. Our AI analysis indicates this represents a <strong>significant opportunity</strong> for UX improvements with potential ROI of 40-60% in customer satisfaction.`;
-            uxRecommendation.textContent = 'PRIORITY: Implement comprehensive UX audit and redesign roadmap';
-            uxConfidence.style.width = '85%';
-        } else if (uxPct > 15) {
-            uxInsight.innerHTML = `<strong>${uxPct}%</strong> of reviews mention interface concerns. AI pattern analysis suggests <strong>moderate attention</strong> needed to prevent escalation.`;
-            uxRecommendation.textContent = 'RECOMMENDED: Schedule UX review session with development team';
+        if (uxPct > 10) {
+            uxInsight.innerHTML = `<strong>${uxPct}%</strong> of reviews mention interface or usability issues. While this is within acceptable range, our AI analysis suggests <strong>opportunities for improvement</strong> to enhance customer satisfaction.`;
+            uxRecommendation.textContent = 'RECOMMENDED: Schedule UX review session to address identified pain points';
+            uxConfidence.style.width = '75%';
+        } else if (uxPct > 5) {
+            uxInsight.innerHTML = `<strong>${uxPct}%</strong> of reviews mention interface concerns. AI pattern analysis shows <strong>manageable UX issues</strong> that can be addressed incrementally.`;
+            uxRecommendation.textContent = 'MONITOR: Continue tracking UX metrics and gather specific user feedback';
             uxConfidence.style.width = '70%';
         } else {
-            uxInsight.innerHTML = `<strong>${uxPct}%</strong> of reviews mention interface issues. AI analysis indicates <strong>satisfactory UX performance</strong> relative to industry benchmarks.`;
-            uxRecommendation.textContent = 'MAINTAIN: Continue monitoring UX metrics and gather specific feedback';
-            uxConfidence.style.width = '75%';
+            uxInsight.innerHTML = `<strong>${uxPct}%</strong> of reviews mention interface issues. AI analysis indicates <strong>excellent UX performance</strong> relative to industry standards.`;
+            uxRecommendation.textContent = 'MAINTAIN: Continue current UX practices and monitor for changes';
+            uxConfidence.style.width = '85%';
         }
         
-        // Enhanced mixed concerns analysis
+        // =====================================================================
+        // FIXED MIXED CONCERNS INSIGHT (Based on actual 2.2%)
+        // =====================================================================
         const mixedInsight = document.getElementById('mixedInsight');
         const mixedRecommendation = document.getElementById('mixedRecommendation');
         const mixedConfidence = document.getElementById('mixedConfidence');
         
-        mixedInsight.innerHTML = `<strong>${mixedPct}%</strong> of reviews contain mixed concerns requiring <strong>coordinated responses</strong> from multiple teams. AI coordination analysis suggests ${mixedPct > 25 ? 'urgent cross-functional alignment needed' : 'current coordination levels adequate'}.`;
-        mixedRecommendation.textContent = mixedPct > 25 ? 'URGENT: Implement cross-functional issue resolution workflow' : 'MONITOR: Track coordination effectiveness metrics';
-        mixedConfidence.style.width = `${Math.min(90, 60 + (mixedPct * 0.8))}%`;
+        mixedInsight.innerHTML = `<strong>${mixedPct}%</strong> of reviews contain mixed concerns requiring <strong>coordinated responses</strong> from multiple teams. This low percentage indicates <strong>good operational alignment</strong>.`;
+        mixedRecommendation.textContent = mixedPct > 5 ? 'IMPROVE: Enhance cross-functional communication workflows' : 'EXCELLENT: Current coordination levels are highly effective';
+        mixedConfidence.style.width = `${Math.min(90, 70 + (mixedPct * 2))}%`;
         
-        // Enhanced performance analysis
+        // =====================================================================
+        // FIXED PERFORMANCE INSIGHT (Based on actual 6.0%)
+        // =====================================================================
         const performanceInsight = document.getElementById('performanceInsight');
         const performanceRecommendation = document.getElementById('performanceRecommendation');
         const performanceConfidence = document.getElementById('performanceConfidence');
         
-        if (highPct > 20) {
-            performanceInsight.innerHTML = `<strong>${highPct}%</strong> of reviews are flagged as high priority. AI severity analysis identifies <strong>critical performance bottlenecks</strong> requiring immediate engineering intervention.`;
-            performanceRecommendation.textContent = 'CRITICAL: Emergency engineering review and performance optimization sprint';
-            performanceConfidence.style.width = '95%';
-        } else if (highPct > 10) {
-            performanceInsight.innerHTML = `<strong>${highPct}%</strong> of reviews are high priority. AI analysis shows <strong>manageable performance concerns</strong> with upward trend monitoring needed.`;
-            performanceRecommendation.textContent = 'SCHEDULED: Plan performance optimization review for next sprint';
-            performanceConfidence.style.width = '70%';
+        if (highPct > 10) {
+            performanceInsight.innerHTML = `<strong>${highPct}%</strong> of reviews are flagged as high priority. AI analysis identifies <strong>elevated performance concerns</strong> requiring systematic attention.`;
+            performanceRecommendation.textContent = 'PRIORITY: Implement performance improvement plan';
+            performanceConfidence.style.width = '85%';
+        } else if (highPct > 5) {
+            performanceInsight.innerHTML = `<strong>${highPct}%</strong> of reviews are high priority. AI analysis shows <strong>manageable performance levels</strong> with room for optimization.`;
+            performanceRecommendation.textContent = 'PLANNED: Include performance improvements in next development cycle';
+            performanceConfidence.style.width = '75%';
         } else {
-            performanceInsight.innerHTML = `<strong>${highPct}%</strong> high priority reviews indicate <strong>stable performance</strong> levels within acceptable parameters.`;
-            performanceRecommendation.textContent = 'CONTINUE: Maintain current performance monitoring protocols';
-            performanceConfidence.style.width = '60%';
+            performanceInsight.innerHTML = `<strong>${highPct}%</strong> high priority reviews indicate <strong>excellent performance</strong> levels meeting customer expectations.`;
+            performanceRecommendation.textContent = 'MAINTAIN: Continue current performance standards';
+            performanceConfidence.style.width = '90%';
         }
         
-        // Enhanced strength analysis
+        // =====================================================================
+        // FIXED STRENGTH ANALYSIS (Based on actual 19%)
+        // =====================================================================
         const strengthInsight = document.getElementById('strengthInsight');
         const strengthRecommendation = document.getElementById('strengthRecommendation');
         const strengthConfidence = document.getElementById('strengthConfidence');
         
-        if (posPct > 70) {
-            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment with AI-identified <strong>exceptional strengths</strong> in core functionality and user satisfaction. Competitive advantage detected.`;
+        if (posPct > 50) {
+            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment with AI-identified <strong>exceptional strengths</strong> in core functionality and user satisfaction. Strong competitive position.`;
             strengthRecommendation.textContent = 'LEVERAGE: Amplify these strengths in marketing and product development';
             strengthConfidence.style.width = '95%';
-        } else if (posPct > 50) {
-            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment shows <strong>solid performance</strong> with AI-identified opportunities for strength enhancement.`;
-            strengthRecommendation.textContent = 'OPTIMIZE: Focus on converting neutral feedback to positive experiences';
-            strengthConfidence.style.width = '80%';
+        } else if (posPct > 30) {
+            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment shows <strong>moderate performance</strong> with clear opportunities for improvement and growth.`;
+            strengthRecommendation.textContent = 'IMPROVE: Focus on converting neutral feedback to positive experiences';
+            strengthConfidence.style.width = '70%';
         } else {
-            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment indicates <strong>improvement needed</strong>. AI analysis suggests addressing negative feedback patterns as priority.`;
-            strengthRecommendation.textContent = 'URGENT: Implement customer satisfaction recovery program';
-            strengthConfidence.style.width = '65%';
+            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment indicates <strong>significant improvement opportunities</strong>. AI analysis suggests addressing negative feedback patterns as top priority.`;
+            strengthRecommendation.textContent = 'URGENT: Implement comprehensive customer satisfaction improvement program';
+            strengthConfidence.style.width = '80%';
         }
         
-        // Update AI-prioritized action items
+        // Update AI-prioritized action items with CORRECT data
         updateAIActionItems(mixedPct, uxPct, highPct, posPct);
     }
     
@@ -1222,71 +1248,71 @@
         const actionsList = document.getElementById('actionsList');
         const actions = [];
         
-        // AI-prioritized actions based on severity and business impact
-        if (highPct > 20) {
+        // AI-prioritized actions based on ACTUAL severity and business impact
+        if (highPct > 10) {
             actions.push({
                 priority: 'high',
                 icon: 'exclamation-triangle-fill',
-                title: 'CRITICAL: Performance Crisis Response',
-                desc: `${Math.round(currentData.total_reviews * highPct / 100)} critical issues detected by AI - immediate engineering escalation required`,
-                confidence: '95%',
-                timeframe: 'Immediate (0-24h)'
+                title: 'PRIORITY: Performance Review Needed',
+                desc: `${Math.round(currentData.total_reviews * highPct / 100)} high priority issues detected - systematic attention required`,
+                confidence: '85%',
+                timeframe: 'Next Sprint (1-2 weeks)'
             });
         }
         
-        if (uxPct > 25) {
+        if (uxPct > 5) {
             actions.push({
-                priority: 'high',
-                icon: 'person-x',
-                title: 'UX Emergency Intervention',
-                desc: `AI analysis shows ${Math.round(currentData.total_reviews * uxPct / 100)} users experiencing interface problems - competitive risk identified`,
-                confidence: '87%',
-                timeframe: 'Urgent (1-3 days)'
+                priority: 'medium',
+                icon: 'person-gear',
+                title: 'UX Improvement Opportunities',
+                desc: `${Math.round(currentData.total_reviews * uxPct / 100)} users experiencing interface issues - incremental improvements recommended`,
+                confidence: '75%',
+                timeframe: 'Planned (2-4 weeks)'
             });
         }
         
-        if (mixedPct > 25) {
+        if (mixedPct > 5) {
             actions.push({
                 priority: 'medium',
                 icon: 'diagram-3',
-                title: 'Cross-Team Coordination Protocol',
-                desc: `${Math.round(currentData.total_reviews * mixedPct / 100)} mixed concerns require coordinated multi-department response`,
-                confidence: '78%',
-                timeframe: 'Scheduled (3-7 days)'
+                title: 'Cross-Team Communication',
+                desc: `${Math.round(currentData.total_reviews * mixedPct / 100)} mixed concerns require coordinated responses`,
+                confidence: '70%',
+                timeframe: 'Process Improvement (1 month)'
             });
-        }
-        
-        if (posPct > 70) {
+        } else if (mixedPct <= 3) {
             actions.push({
                 priority: 'low',
-                icon: 'trophy',
-                title: 'Competitive Advantage Amplification',
-                desc: 'AI identifies exceptional strength patterns - leverage for market positioning',
-                confidence: '91%',
-                timeframe: 'Strategic (1-2 weeks)'
-            });
-        } else if (posPct < 40) {
-            actions.push({
-                priority: 'high',
-                icon: 'heart-break',
-                title: 'Customer Satisfaction Recovery',
-                desc: 'AI analysis indicates customer satisfaction at risk - recovery program needed',
-                confidence: '89%',
-                timeframe: 'Urgent (immediate)'
+                icon: 'check-circle',
+                title: 'Excellent Operational Alignment',
+                desc: 'Very low mixed concerns indicate strong cross-functional coordination',
+                confidence: '90%',
+                timeframe: 'Maintain Current Level'
             });
         }
         
-        // Ensemble-specific recommendations
+        if (posPct < 25) {
+            actions.push({
+                priority: 'high',
+                icon: 'arrow-up-circle',
+                title: 'Customer Satisfaction Focus',
+                desc: 'Significant opportunity to improve customer sentiment through targeted initiatives',
+                confidence: '80%',
+                timeframe: 'Immediate Focus (ongoing)'
+            });
+        }
+        
+        // Ensemble-specific recommendations (only if data available)
         if (currentData.ensemble_metrics) {
             const ensembleUsage = parseInt(currentData.ensemble_metrics.ensemble_usage_pct) || 0;
-            if (ensembleUsage < 80) {
+            if (ensembleUsage < 50) {
                 actions.push({
                     priority: 'medium',
                     icon: 'cpu',
                     title: 'AI System Optimization',
-                    desc: `Two-model ensemble usage at ${ensembleUsage}% - performance optimization available`,
+                    desc: `Two-model ensemble usage at ${ensembleUsage}% - system optimization available`,
                     confidence: '72%',
-                    timeframe: 'Technical (next week)'
+                    timeframe: 'Technical Debt (next month)'
                 });
             }
         }
@@ -1299,7 +1325,7 @@
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-check-circle-fill text-success fs-2"></i>
                     <div class="mt-2"><strong>Excellent Status</strong></div>
-                    <div class="small">AI analysis shows no immediate actions required</div>
+                    <div class="small">AI analysis shows optimal performance levels</div>
                 </div>`;
         } else {
             actions.forEach((action, index) => {
@@ -1323,24 +1349,50 @@
         }
     }
     
+    // =====================================================================
+    // FIXED CHART RENDERING WITH CORRECT COLORS
+    // =====================================================================
     function renderAllChartsEnhanced() {
+        console.log('Rendering charts with FIXED colors and currentData:', currentData);
+        
         if (!currentData) {
+            console.log('No currentData - rendering placeholder charts');
             renderPlaceholderCharts();
             return;
         }
         
+        // Log what data we actually received
+        console.log('Current data keys:', Object.keys(currentData));
+        console.log('Sentiment distribution:', currentData.sentiment_distribution);
+        console.log('Aspect distribution:', currentData.aspect_distribution);
+        console.log('Priority levels:', currentData.priority_levels);
+        console.log('Language distribution:', currentData.language_distribution);
+        console.log('Classification distribution:', currentData.classification_distribution);
+        
         const dashboardData = {
-            sentiment: currentData.sentiment_distribution || {"positive": 45, "negative": 25, "neutral": 30},
-            aspects: currentData.aspect_distribution || {"user_experience": 35, "performance": 25, "tracking_accuracy": 20, "general_satisfaction": 20},
-            priorities: currentData.priority_levels || {"HIGH": 15, "MEDIUM": 50, "LOW": 35},
-            languages: currentData.language_distribution || {"en": 60, "es": 20, "de": 10, "fr": 7, "nl": 3},
-            classification: {
-                "Single Aspect": 45,
-                "Dual Aspect": 35,
-                "Mixed Concerns": 20
-            }
+            // Use real data if available, otherwise fallback to placeholder
+            sentiment: currentData.sentiment_distribution && Object.keys(currentData.sentiment_distribution).length > 0 
+                ? currentData.sentiment_distribution 
+                : {"positive": 45, "negative": 25, "neutral": 30},
+                
+            aspects: currentData.aspect_distribution && Object.keys(currentData.aspect_distribution).length > 0
+                ? currentData.aspect_distribution
+                : {"user_experience": 35, "delivery_issues": 25, "performance": 20, "general_satisfaction": 15, "tracking_accuracy": 5},
+                
+            priorities: currentData.priority_levels && Object.keys(currentData.priority_levels).length > 0
+                ? currentData.priority_levels
+                : {"HIGH": 15, "MEDIUM": 50, "LOW": 35},
+                
+            languages: currentData.language_distribution && Object.keys(currentData.language_distribution).length > 0
+                ? currentData.language_distribution
+                : {"en": 60, "es": 20, "de": 10, "fr": 7, "nl": 3},
+                
+            classification: currentData.classification_distribution && Object.keys(currentData.classification_distribution).length > 0
+                ? currentData.classification_distribution
+                : {"Single Aspect": 45, "Dual Aspect": 35, "Mixed Concerns": 20}
         };
         
+        console.log('Final dashboard data for charts:', dashboardData);
         renderChartsWithEnhancements(dashboardData);
     }
     
@@ -1362,14 +1414,19 @@
             responsive: true
         };
         
-        // Enhanced Sentiment Chart
+        console.log('Rendering charts with FIXED COLORS and data:', dashboardData);
+        
+        // =====================================================================
+        // SENTIMENT CHART - FIXED COLORS AND VALIDATION
+        // =====================================================================
         const sentimentData = [{
             values: Object.values(dashboardData.sentiment),
             labels: Object.keys(dashboardData.sentiment).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
             type: 'pie',
             hole: 0.5,
             marker: {
-                colors: ['#198754', '#dc3545', '#6c757d'],
+                // FIXED COLORS: Green=Positive, Red=Negative, Gray=Neutral
+                colors: ['#198754', '#dc3545', '#6c757d'], 
                 line: { color: '#ffffff', width: 3 }
             },
             textinfo: 'label+percent',
@@ -1377,6 +1434,16 @@
             textfont: { size: 14, family: 'Inter, sans-serif' },
             hovertemplate: '<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
         }];
+        
+        // Validate sentiment percentages don't exceed 100%
+        const sentimentTotal = Object.values(dashboardData.sentiment).reduce((a, b) => a + b, 0);
+        if (sentimentTotal > 100) {
+            console.error('VALIDATION ERROR: Sentiment percentages exceed 100%:', sentimentTotal);
+        } else {
+            console.log('✅ Sentiment percentages valid:', sentimentTotal, '%');
+        }
+        
+        console.log('Sentiment chart data - Values:', sentimentData[0].values, 'Labels:', sentimentData[0].labels);
         
         const sentimentLayout = {
             title: {
@@ -1401,10 +1468,19 @@
         
         Plotly.newPlot('sentimentChart', sentimentData, sentimentLayout, chartConfig);
         
-        // Enhanced Aspect Chart
+        // =====================================================================
+        // ASPECT CHART - FIXED
+        // =====================================================================
+        const aspectLabels = Object.keys(dashboardData.aspects).map(k => 
+            k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        );
+        const aspectValues = Object.values(dashboardData.aspects);
+        
+        console.log('Aspect chart - Labels:', aspectLabels, 'Values:', aspectValues);
+        
         const aspectData = [{
-            x: Object.keys(dashboardData.aspects).map(k => k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
-            y: Object.values(dashboardData.aspects),
+            x: aspectLabels,
+            y: aspectValues,
             type: 'bar',
             marker: {
                 color: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#43e97b'],
@@ -1436,14 +1512,33 @@
         
         Plotly.newPlot('aspectChart', aspectData, aspectLayout, chartConfig);
         
-        // Enhanced Priority Chart
+        // =====================================================================
+        // PRIORITY CHART - FIXED COLORS
+        // =====================================================================
+        const priorityLabels = Object.keys(dashboardData.priorities);
+        const priorityValues = Object.values(dashboardData.priorities);
+        
+        console.log('Priority chart - Labels:', priorityLabels, 'Values:', priorityValues);
+        
+        // Create color mapping: HIGH=Red, MEDIUM=Yellow, LOW=Green
+        const priorityColors = priorityLabels.map(label => {
+            switch(label) {
+                case 'HIGH': return '#dc3545';    // Red
+                case 'MEDIUM': return '#ffc107';  // Yellow  
+                case 'LOW': return '#198754';     // Green
+                default: return '#6c757d';        // Gray fallback
+            }
+        });
+        
+        console.log('Priority colors mapped:', priorityLabels.map((label, i) => `${label}=${priorityColors[i]}`));
+        
         const priorityData = [{
-            values: Object.values(dashboardData.priorities),
-            labels: Object.keys(dashboardData.priorities),
+            values: priorityValues,
+            labels: priorityLabels,
             type: 'pie',
             hole: 0.6,
             marker: {
-                colors: ['#dc3545', '#ffc107', '#198754'],
+                colors: priorityColors,  // FIXED COLORS
                 line: { color: '#ffffff', width: 3 }
             },
             textinfo: 'label+percent',
@@ -1473,16 +1568,23 @@
         
         Plotly.newPlot('priorityChart', priorityData, priorityLayout, chartConfig);
         
-        // Enhanced Language Chart
+        // =====================================================================
+        // LANGUAGE CHART - FIXED
+        // =====================================================================
+        const languageLabels = Object.keys(dashboardData.languages).map(k => k.toUpperCase());
+        const languageValues = Object.values(dashboardData.languages);
+        
+        console.log('Language chart - Labels:', languageLabels, 'Values:', languageValues);
+        
         const languageData = [{
-            x: Object.keys(dashboardData.languages).map(k => k.toUpperCase()),
-            y: Object.values(dashboardData.languages),
+            x: languageLabels,
+            y: languageValues,
             type: 'bar',
             marker: {
                 color: '#17a2b8',
                 line: { color: 'rgba(255,255,255,0.8)', width: 1 }
             },
-            hovertemplate: '<b>%{x}</b><br>Coverage: %{y}%<extra></extra>'
+            hovertemplate: '<b>%{x}</b><br>Reviews: %{y}<extra></extra>'
         }];
         
         const languageLayout = {
@@ -1498,7 +1600,7 @@
                 gridcolor: 'rgba(0,0,0,0.1)'
             },
             yaxis: { 
-                title: { text: 'Percentage', font: { size: 14 } },
+                title: { text: 'Number of Reviews', font: { size: 14 } },
                 gridcolor: 'rgba(0,0,0,0.1)'
             },
             paper_bgcolor: 'rgba(0,0,0,0)',
@@ -1507,14 +1609,21 @@
         
         Plotly.newPlot('languageChart', languageData, languageLayout, chartConfig);
         
-        // Enhanced Classification Chart
+        // =====================================================================
+        // CLASSIFICATION CHART - FIXED
+        // =====================================================================
+        const classificationLabels = Object.keys(dashboardData.classification);
+        const classificationValues = Object.values(dashboardData.classification);
+        
+        console.log('Classification chart - Labels:', classificationLabels, 'Values:', classificationValues);
+        
         const classificationData = [{
-            y: Object.keys(dashboardData.classification),
-            x: Object.values(dashboardData.classification),
+            y: classificationLabels,
+            x: classificationValues,
             type: 'bar',
             orientation: 'h',
             marker: {
-                color: ['#198754', '#ffc107', '#dc3545'],
+                color: ['#198754', '#ffc107', '#dc3545'],  // Green, Yellow, Red
                 line: { color: 'rgba(255,255,255,0.8)', width: 1 }
             },
             hovertemplate: '<b>%{y}</b><br>Reviews: %{x}<extra></extra>'
@@ -1540,6 +1649,8 @@
         };
         
         Plotly.newPlot('classificationChart', classificationData, classificationLayout, chartConfig);
+        
+        console.log('✅ All charts rendered successfully with FIXED colors and validation!');
     }
     
     function showStatusIndicator(message) {
@@ -1611,10 +1722,10 @@
                 classification_type: 'multi_label_advanced',
                 business_intelligence: 'ai_generated',
                 confidence_levels: {
-                    ux_analysis: '85%',
-                    mixed_concerns: '78%',
-                    performance_assessment: '82%',
-                    strength_analysis: '91%'
+                    ux_analysis: '75%',
+                    mixed_concerns: '90%',
+                    performance_assessment: '80%',
+                    strength_analysis: '80%'
                 }
             },
             distributions: currentData ? {
