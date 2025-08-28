@@ -86,7 +86,7 @@ def test_pure_multilabel_initialization():
         # Test enhanced sentiment classifier - FIXED
         print("🔮 Initializing enhanced sentiment classifier...")
         from src.models.enhanced_sentiment_classifier import EnhancedSentimentClassifier
-        sentiment_classifier = EnhancedSentimentClassifier(use_ensemble=True)
+        sentiment_classifier = EnhancedSentimentClassifier(device='auto', verbose=False)
         print("✅ Enhanced sentiment classifier initialized")
         
         # Test pure multi-label aspect classifier - FIXED

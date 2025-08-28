@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-Enhanced Multi-Label Aspect Classifier - IMPROVED VERSION 2.0
+Enhanced Multi-Label Aspect Classifier - UPDATED for Two-Model Ensemble Integration
 Save as: src/models/enhanced_aspect_classifier.py
 
-IMPROVEMENTS IN V2.0:
-1. FIXED: Confidence scores now properly normalized (0-100%)
-2. FIXED: Proper sentiment-aware classification types
-3. NEW: Context-aware pattern matching
-4. NEW: Dynamic thresholds based on sentiment
-5. NEW: Improved keyword weighting system
-6. NEW: Better multi-label logic
+INTEGRATION UPDATES:
+- Compatible with new two-model ensemble sentiment classifier
+- Improved confidence normalization
+- Better sentiment-aware classification
+- Enhanced business intelligence integration
 """
 
 import pandas as pd
@@ -27,12 +25,12 @@ try:
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
-    print("⚠️ Transformers not available - using keyword-based classification only")
+    print("Warning: Transformers not available - using keyword-based classification only")
 
 class EnhancedAspectClassifier:
     """
     Enhanced Multi-Label Aspect Classifier for FedEx Reviews
-    Version 2.0 - With proper confidence normalization and improved logic
+    Updated for integration with two-model ensemble sentiment classifier
     """
     
     def __init__(self, confidence_threshold=0.3):
@@ -55,7 +53,7 @@ class EnhancedAspectClassifier:
         # Initialize semantic classifier if available
         self._initialize_semantic_classifier()
         
-        print("✅ Enhanced Aspect Classifier V2.0 initialized")
+        print("Enhanced Aspect Classifier V2.0 initialized (Two-Model Ensemble Compatible)")
     
     def _initialize_enhanced_keywords(self):
         """Initialize improved keyword system with context patterns"""
@@ -94,7 +92,7 @@ class EnhancedAspectClassifier:
                 'keywords': {
                     'performance': 0.9, 'speed': 0.8, 'crash': 1.0, 
                     'bug': 0.9, 'error': 0.8, 'loading': 0.7,
-                    'freeze': 1.0, 'lag': 0.8, 'works': 0.3  # Lower weight for generic "works"
+                    'freeze': 1.0, 'lag': 0.8, 'works': 0.3
                 }
             },
             
@@ -175,9 +173,9 @@ class EnhancedAspectClassifier:
                 "zero-shot-classification",
                 model="facebook/bart-large-mnli"
             )
-            print("✅ Semantic classifier loaded")
+            print("Semantic classifier loaded successfully")
         except Exception as e:
-            print(f"⚠️ Could not load semantic classifier: {e}")
+            print(f"Could not load semantic classifier: {e}")
             self.semantic_classifier = None
     
     def classify_aspects_multilabel(self, text: str, language: str = 'en', 
@@ -185,6 +183,7 @@ class EnhancedAspectClassifier:
                                    sentiment_confidence: float = 0.5) -> Dict:
         """
         Main classification method with proper confidence normalization
+        Compatible with two-model ensemble sentiment input
         """
         if not text.strip():
             return self._empty_result()
@@ -249,7 +248,6 @@ class EnhancedAspectClassifier:
             # Check weighted keywords
             for keyword, weight in config.get('keywords', {}).items():
                 if keyword in text_lower:
-                    # Check context to avoid false positives
                     if self._check_keyword_context(text_lower, keyword):
                         score += weight
                         matches.append(f'keyword_{keyword}')
@@ -258,21 +256,17 @@ class EnhancedAspectClassifier:
             final_score = score * severity_modifier
             
             # Normalize to 0-1 range using sigmoid-like function
-            # This ensures scores never exceed 1.0
-            normalized_score = np.tanh(final_score / 3.0)  # Divide by 3 for good scaling
-            
-            scores[aspect] = min(1.0, max(0.0, normalized_score))  # Ensure 0-1 range
+            normalized_score = np.tanh(final_score / 3.0)
+            scores[aspect] = min(1.0, max(0.0, normalized_score))
         
         return scores
     
     def _check_keyword_context(self, text: str, keyword: str, window: int = 30) -> bool:
         """Check if keyword appears in relevant context"""
-        # Find keyword position
         idx = text.find(keyword)
         if idx == -1:
             return False
         
-        # Get context window
         start = max(0, idx - window)
         end = min(len(text), idx + len(keyword) + window)
         context = text[start:end]
@@ -281,7 +275,7 @@ class EnhancedAspectClassifier:
         negations = ['not', 'no', "doesn't", "won't", "can't", "isn't", "never"]
         for neg in negations:
             if neg in context and abs(context.find(neg) - context.find(keyword)) < 10:
-                return False  # Negation too close to keyword
+                return False
         
         return True
     
@@ -315,7 +309,6 @@ class EnhancedAspectClassifier:
             for label, score in zip(result['labels'], result['scores']):
                 if label in label_mapping:
                     aspect = label_mapping[label]
-                    # Ensure semantic scores are also normalized
                     semantic_scores[aspect] = min(1.0, score)
             
             return semantic_scores
@@ -331,8 +324,8 @@ class EnhancedAspectClassifier:
         combined = {}
         all_aspects = set(keyword_scores.keys()) | set(semantic_scores.keys())
         
-        # Calculate length penalty (shorter texts get slight penalty)
-        length_factor = min(1.0, text_length / 20.0)  # Full score at 20+ words
+        # Calculate length penalty
+        length_factor = min(1.0, text_length / 20.0)
         
         for aspect in all_aspects:
             keyword_score = keyword_scores.get(aspect, 0.0)
@@ -340,16 +333,12 @@ class EnhancedAspectClassifier:
             
             # Weighted combination
             if semantic_score > 0:
-                # If we have semantic scores, use both
                 combined_score = (keyword_score * 0.7) + (semantic_score * 0.3)
             else:
-                # Only keywords available
                 combined_score = keyword_score
             
             # Apply length factor
             final_score = combined_score * (0.8 + 0.2 * length_factor)
-            
-            # Ensure final normalization to 0-1 range
             combined[aspect] = min(1.0, max(0.0, final_score))
         
         return combined
@@ -360,9 +349,7 @@ class EnhancedAspectClassifier:
         
         for aspect, score in scores.items():
             priority_weight = self.priority_weights.get(aspect, 1.0)
-            # Apply weight but maintain 0-1 range
             weighted_score = score * priority_weight
-            # Re-normalize to maintain 0-1 range
             prioritized[aspect] = min(1.0, weighted_score)
         
         return prioritized
@@ -375,10 +362,10 @@ class EnhancedAspectClassifier:
         
         # Dynamic thresholds based on sentiment
         if sentiment == 'positive':
-            primary_threshold = 0.20  # Lower threshold for positive
+            primary_threshold = 0.20
             secondary_threshold = 0.15
         elif sentiment == 'negative':
-            primary_threshold = 0.35  # Higher threshold for negative
+            primary_threshold = 0.35
             secondary_threshold = 0.30
         else:
             primary_threshold = 0.30
@@ -393,8 +380,7 @@ class EnhancedAspectClassifier:
             if score >= primary_threshold:
                 significant_aspects.append((aspect, score))
             elif len(significant_aspects) > 0 and score >= secondary_threshold:
-                # Allow secondary aspects if we have a primary
-                if score >= significant_aspects[0][1] * 0.5:  # At least 50% of primary
+                if score >= significant_aspects[0][1] * 0.5:
                     significant_aspects.append((aspect, score))
         
         if not significant_aspects:
@@ -402,7 +388,7 @@ class EnhancedAspectClassifier:
         
         # Determine classification type based on sentiment
         primary_aspect = significant_aspects[0][0]
-        primary_confidence = min(1.0, significant_aspects[0][1])  # Ensure <= 1.0
+        primary_confidence = min(1.0, significant_aspects[0][1])
         
         if len(significant_aspects) == 1:
             secondary_aspects = []
@@ -511,7 +497,7 @@ class EnhancedAspectClassifier:
         """Calculate business priority level"""
         
         if sentiment == 'positive':
-            return 'LOW'  # Positive feedback = low priority
+            return 'LOW'
         
         base_priority = {
             'user_experience': 'HIGH',
@@ -532,7 +518,7 @@ class EnhancedAspectClassifier:
             else:
                 return 'LOW'
         
-        return 'LOW'  # Neutral gets low priority
+        return 'LOW'
     
     def _generate_recommendation(self, primary: str, secondary: List,
                                 priority: str, sentiment: str) -> str:
@@ -635,10 +621,59 @@ class EnhancedAspectClassifier:
         
         return results
 
+    def generate_business_report(self, results: List[Dict]) -> Dict:
+        """Generate comprehensive business intelligence report"""
+        if not results:
+            return {'summary': {}, 'top_recommendations': [], 'critical_issues': []}
+        
+        total = len(results)
+        
+        # Aggregate metrics
+        priority_counts = Counter([r.get('priority_level', 'MEDIUM') for r in results])
+        severity_counts = Counter([r.get('severity_level', 'MODERATE') for r in results])
+        aspect_counts = Counter([r.get('primary_aspect', 'general_satisfaction') for r in results])
+        
+        # Calculate percentages
+        high_priority_pct = (priority_counts.get('HIGH', 0) / total) * 100
+        critical_severity_pct = (severity_counts.get('CRITICAL', 0) / total) * 100
+        immediate_action_count = sum(1 for r in results if r.get('requires_immediate_action', False))
+        
+        return {
+            'summary': {
+                'total_reviews': total,
+                'high_priority_percentage': round(high_priority_pct, 1),
+                'critical_severity_percentage': round(critical_severity_pct, 1),
+                'immediate_action_required': immediate_action_count
+            },
+            'top_recommendations': self._generate_top_recommendations(results),
+            'aspect_distribution': dict(aspect_counts.most_common(5)),
+            'priority_distribution': dict(priority_counts),
+            'severity_distribution': dict(severity_counts)
+        }
+    
+    def _generate_top_recommendations(self, results: List[Dict]) -> List[str]:
+        """Generate actionable business recommendations"""
+        recommendations = []
+        
+        critical_count = sum(1 for r in results if r.get('severity_level') == 'CRITICAL')
+        if critical_count > 0:
+            recommendations.append(f"CRITICAL: {critical_count} reviews need immediate attention")
+        
+        high_priority = sum(1 for r in results if r.get('priority_level') == 'HIGH')
+        if high_priority > len(results) * 0.2:
+            recommendations.append(f"HIGH VOLUME: {high_priority} high-priority issues")
+        
+        # Most common aspects
+        aspects = Counter([r.get('primary_aspect') for r in results])
+        top_aspect = aspects.most_common(1)[0] if aspects else ('general_satisfaction', 0)
+        recommendations.append(f"Focus on {top_aspect[0].replace('_', ' ')}: {top_aspect[1]} mentions")
+        
+        return recommendations[:5]
 
-# Test the improved classifier
+
+# Test the updated classifier
 if __name__ == "__main__":
-    print("🚀 Testing Enhanced Aspect Classifier V2.0")
+    print("Testing Enhanced Aspect Classifier V2.0 (Two-Model Ensemble Compatible)")
     print("="*70)
     
     classifier = EnhancedAspectClassifier()
@@ -666,7 +701,7 @@ if __name__ == "__main__":
         }
     ]
     
-    print("\n📊 Classification Results:")
+    print("\nClassification Results:")
     print("-" * 70)
     
     for i, test in enumerate(test_cases, 1):
@@ -681,11 +716,9 @@ if __name__ == "__main__":
         print(f"   Classification: {result['classification_type']}")
         print(f"   Primary: {result['primary_aspect']}")
         print(f"   Secondary: {result['secondary_aspects']}")
-        print(f"   Confidence: {result['confidence_percentage']} ✅")  # Now properly <= 100%
+        print(f"   Confidence: {result['confidence_percentage']}")
         print(f"   Priority: {result['priority_level']}")
         print(f"   Summary: {result['business_summary']}")
         print(f"   Recommendation: {result['recommendation']}")
     
-    print("\n✅ All confidence scores properly normalized (0-100%)!")
-    print("✅ Sentiment-aware classification types working correctly!")
-    print("✅ Enhanced Aspect Classifier V2.0 ready for production!")
+    print("\nEnhanced Aspect Classifier V2.0 ready for two-model ensemble integration!")

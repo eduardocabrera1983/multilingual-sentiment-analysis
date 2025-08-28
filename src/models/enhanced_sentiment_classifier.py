@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 """
-Enhanced GPU-Accelerated Sentiment Classifier - VERSION 2.0
-Save as: src/models/enhanced_sentiment_classifier.py
-
-IMPROVEMENTS IN V2.0:
-1. Better error handling and fallback mechanisms
-2. Proper confidence normalization
-3. Improved GPU memory management
-4. Better integration with aspect classifier
-5. More robust model loading
-6. ENHANCED: Adaptive rule-based analysis with text-specific intelligence
+Enhanced Sentiment Classifier - Two-Model Ensemble with Advanced Features
+Maintains XLM-RoBERTa + Twitter-RoBERTa ensemble with restored advanced functionality
 """
 
 import numpy as np
@@ -23,17 +15,17 @@ import logging
 from datetime import datetime
 import os
 import gc
+import re
 
 warnings.filterwarnings('ignore')
 
 class EnhancedSentimentClassifier:
     """
-    Enhanced GPU-Accelerated Sentiment Classifier V2.0
-    Optimized for NVIDIA RTX 4000 Ada (12GB VRAM)
+    Enhanced Sentiment Classifier with Two-Model Ensemble
+    XLM-RoBERTa (53.3%) + Twitter-RoBERTa (46.7%) + Advanced Features
     """
     
-    def __init__(self, use_ensemble=False, device='auto', verbose=True):
-        self.use_ensemble = use_ensemble
+    def __init__(self, device='auto', verbose=True):
         self.verbose = verbose
         self.models = {}
         self.device = None
@@ -45,10 +37,11 @@ class EnhancedSentimentClassifier:
         self.device = self._configure_device(device)
         
         # Print initialization info
-        self._print_init_info()
+        if self.verbose:
+            self._print_init_info()
         
-        # Load models with improved error handling
-        self._load_models_improved()
+        # Load the two-model ensemble
+        self._load_two_model_ensemble()
         
         # Initialize cache for better performance
         self.cache = {}
@@ -62,7 +55,7 @@ class EnhancedSentimentClassifier:
                 torch.cuda.empty_cache()
                 gc.collect()
                 
-                # Enable optimizations for RTX 4000 Ada
+                # Enable optimizations for GPU
                 torch.backends.cuda.matmul.allow_tf32 = True
                 torch.backends.cudnn.allow_tf32 = True
                 torch.backends.cudnn.benchmark = True
@@ -79,7 +72,7 @@ class EnhancedSentimentClassifier:
     def _print_init_info(self):
         """Print initialization information"""
         print("\n" + "="*70)
-        print("ENHANCED SENTIMENT CLASSIFIER V2.0")
+        print("ENHANCED SENTIMENT CLASSIFIER - TWO-MODEL ENSEMBLE")
         print("="*70)
         print(f"Device: {self.device.upper()}")
         
@@ -87,36 +80,37 @@ class EnhancedSentimentClassifier:
             print(f"GPU: {torch.cuda.get_device_name(0)}")
             total_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
             print(f"VRAM: {total_memory:.1f} GB")
-            print("✅ GPU acceleration enabled")
+            print("GPU acceleration enabled")
         else:
-            print("⚠️ Running on CPU (slower performance)")
+            print("Running on CPU")
         
+        print("Models: XLM-RoBERTa (53.3%) + Twitter-RoBERTa (46.7%)")
         print("="*70)
     
-    def _load_models_improved(self):
-        """Load models with improved error handling and fallback"""
+    def _load_two_model_ensemble(self):
+        """Load the optimized two-model ensemble"""
         
-        # Model configurations with fallback options
+        # Two-model configuration with tested weights
         model_configs = [
             {
-                'name': 'primary',
-                'model_id': 'lxyuan/distilbert-base-multilingual-cased-sentiments-student',
+                'name': 'xlm_roberta',
+                'model_id': 'cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual',
                 'fallback_id': 'distilbert-base-uncased-finetuned-sst-2-english',
-                'weight': 1.0,
+                'weight': 0.533,  # 53.3% - primary model
+                'max_length': 512
+            },
+            {
+                'name': 'twitter_roberta',
+                'model_id': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
+                'fallback_id': 'distilbert-base-uncased-finetuned-sst-2-english', 
+                'weight': 0.467,  # 46.7% - secondary model
                 'max_length': 512
             }
         ]
         
-        if self.use_ensemble:
-            model_configs.append({
-                'name': 'secondary',
-                'model_id': 'cardiffnlp/twitter-roberta-base-sentiment',
-                'fallback_id': 'distilbert-base-uncased-finetuned-sst-2-english',
-                'weight': 0.7,
-                'max_length': 512
-            })
+        if self.verbose:
+            print(f"\nLoading two-model ensemble...")
         
-        print(f"\nLoading {len(model_configs)} model(s)...")
         successful_loads = 0
         
         for config in model_configs:
@@ -124,17 +118,20 @@ class EnhancedSentimentClassifier:
             if loaded:
                 successful_loads += 1
         
-        # If no models loaded, use rule-based fallback
+        # Ensure we have at least one model
         if successful_loads == 0:
-            print("\n⚠️ All models failed to load. Using rule-based fallback.")
+            if self.verbose:
+                print("\nAll models failed to load. Using rule-based fallback.")
             self._setup_rule_based_fallback()
         else:
-            print(f"\n✅ Successfully loaded {successful_loads} model(s)")
+            if self.verbose:
+                print(f"\nSuccessfully loaded {successful_loads}/2 ensemble models")
             self._normalize_model_weights()
     
     def _load_single_model(self, config: Dict) -> bool:
         """Load a single model with fallback options"""
-        print(f"\nLoading {config['name']} model...")
+        if self.verbose:
+            print(f"\nLoading {config['name']} model...")
         
         # Try primary model first
         model_loaded = self._try_load_model(
@@ -145,7 +142,8 @@ class EnhancedSentimentClassifier:
         )
         
         if not model_loaded and config.get('fallback_id'):
-            print(f"  Trying fallback model...")
+            if self.verbose:
+                print(f"  Trying fallback model...")
             model_loaded = self._try_load_model(
                 config['fallback_id'],
                 config['name'],
@@ -160,27 +158,28 @@ class EnhancedSentimentClassifier:
         loading_strategies = []
         
         if self.device == 'cuda':
-            # Try GPU with full precision only
+            # Only FP32 strategies (no FP16 as requested)
             loading_strategies = [
                 ('GPU FP32', lambda: self._load_gpu_fp32(model_id, max_length)),
                 ('CPU', lambda: self._load_cpu(model_id, max_length))
             ]
         else:
-            # CPU only
             loading_strategies = [
                 ('CPU', lambda: self._load_cpu(model_id, max_length))
             ]
         
         for strategy_name, strategy_func in loading_strategies:
             try:
-                print(f"  Attempting {strategy_name} loading...")
+                if self.verbose:
+                    print(f"  Attempting {strategy_name} loading...")
                 start_time = time.time()
                 
                 model_pipeline = strategy_func()
                 
                 if model_pipeline is not None:
                     load_time = time.time() - start_time
-                    print(f"  ✅ Loaded via {strategy_name} in {load_time:.1f}s")
+                    if self.verbose:
+                        print(f"  Loaded via {strategy_name} in {load_time:.1f}s")
                     
                     self.models[name] = {
                         'pipeline': model_pipeline,
@@ -189,13 +188,14 @@ class EnhancedSentimentClassifier:
                         'device': strategy_name
                     }
                     
-                    if 'GPU' in strategy_name:
+                    if 'GPU' in strategy_name and self.verbose:
                         self._print_gpu_memory()
                     
                     return True
                     
             except Exception as e:
-                print(f"  ❌ {strategy_name} failed: {str(e)[:100]}")
+                if self.verbose:
+                    print(f"  {strategy_name} failed: {str(e)[:100]}")
                 continue
         
         return False
@@ -246,17 +246,22 @@ class EnhancedSentimentClassifier:
         if total_weight > 0:
             for name in self.models:
                 self.models[name]['weight'] /= total_weight
+        
+        if self.verbose:
+            print("\nModel weights (normalized):")
+            for name, model_info in self.models.items():
+                print(f"  {name}: {model_info['weight']:.3f}")
     
     def analyze_sentiment(self, text: str, language: str = 'auto') -> Dict:
         """
-        Analyze sentiment with proper confidence normalization
+        Analyze sentiment with two-model ensemble
         Returns sentiment and confidence in 0-1 range
         """
         if not text or not text.strip():
             return self._neutral_result()
         
         # Check cache first
-        cache_key = hash(text[:100])  # Use first 100 chars for cache key
+        cache_key = hash(text[:100])
         if cache_key in self.cache:
             cached_result = self.cache[cache_key].copy()
             cached_result['from_cache'] = True
@@ -264,17 +269,19 @@ class EnhancedSentimentClassifier:
         
         start_time = time.time()
         
-        # Get predictions from all models
+        # Get predictions from ensemble models
         predictions = self._get_model_predictions(text)
         
         if not predictions:
-            # Use rule-based fallback
-            result = self._rule_based_analysis(text)
+            # Use enhanced rule-based fallback
+            result = self._advanced_rule_based_analysis(text)
             result['method'] = 'rule_based'
+            result['models_available'] = 0
         else:
-            # Combine predictions
+            # Combine predictions from ensemble
             result = self._combine_predictions(predictions)
-            result['method'] = 'ensemble'
+            result['method'] = 'two_model_ensemble'
+            result['models_available'] = len(predictions)
         
         # Add metadata
         processing_time = time.time() - start_time
@@ -284,7 +291,7 @@ class EnhancedSentimentClassifier:
             'device': self.device,
             'models_used': len(predictions),
             'from_cache': False,
-            'model_used': result.get('method', 'rule_based')  # Added for compatibility
+            'model_used': result.get('method', 'rule_based')
         })
         
         # Ensure confidence is normalized (0-1 range)
@@ -296,7 +303,7 @@ class EnhancedSentimentClassifier:
         return result
     
     def _get_model_predictions(self, text: str) -> Dict:
-        """Get predictions from all loaded models"""
+        """Get predictions from all loaded ensemble models"""
         predictions = {}
         
         for name, model_info in self.models.items():
@@ -322,7 +329,7 @@ class EnhancedSentimentClassifier:
         return predictions
     
     def _combine_predictions(self, predictions: Dict) -> Dict:
-        """Combine multiple model predictions with proper normalization"""
+        """Combine multiple model predictions with weighted voting"""
         if not predictions:
             return self._neutral_result()
         
@@ -344,9 +351,9 @@ class EnhancedSentimentClassifier:
             
             # Parse the prediction
             label = result.get('label', '').lower()
-            score = min(1.0, max(0.0, result.get('score', 0.5)))  # Ensure 0-1 range
+            score = min(1.0, max(0.0, result.get('score', 0.5)))
             
-            # Map label to sentiment
+            # Map label to sentiment with weighted voting
             if any(pos in label for pos in ['positive', 'pos', '5 stars', '4 stars']):
                 sentiment_scores['positive'] += score * weight
                 sentiment_scores['negative'] += (1 - score) * weight * 0.5
@@ -380,17 +387,10 @@ class EnhancedSentimentClassifier:
             'scores': sentiment_scores
         }
     
-    def _rule_based_analysis(self, text: str) -> Dict:
+    def _advanced_rule_based_analysis(self, text: str) -> Dict:
         """
-        ADAPTIVE rule-based sentiment analysis that dynamically adjusts to text characteristics
-        
-        ENHANCEMENTS:
-        - Dynamic threshold adjustment based on text length and characteristics
-        - Context-aware negation detection
-        - Intensity modifier recognition ("very", "extremely")
-        - Punctuation emphasis analysis (!!!, CAPS)
-        - FedEx/logistics domain-specific patterns
-        - Comparative language detection
+        ADVANCED rule-based sentiment analysis with multilingual support
+        Enhanced fallback when transformer models fail
         """
         if not text or not text.strip():
             return self._neutral_result()
@@ -398,41 +398,38 @@ class EnhancedSentimentClassifier:
         text_lower = text.lower()
         original_text = text
         
-        # TEXT ANALYSIS - Extract characteristics
+        # Analyze text features for dynamic thresholding
         text_features = self._analyze_text_features(text, text_lower)
         
-        # ADAPTIVE WORD LISTS - Enhanced with context
-        word_lists = self._get_adaptive_word_lists()
+        # Get multilingual word lists
+        word_lists = self._get_multilingual_word_lists()
         
-        # CONTEXT-AWARE SCORING - Considers surrounding words
+        # Calculate context-aware scores
         scores = self._calculate_context_aware_scores(text_lower, word_lists, text_features)
         
-        # DYNAMIC THRESHOLDS - Adapt based on text characteristics
+        # Apply dynamic thresholds
         thresholds = self._calculate_dynamic_thresholds(text_features)
         
-        # SENTIMENT DETERMINATION - Using adaptive logic
+        # Determine final sentiment
         return self._determine_adaptive_sentiment(scores, thresholds, text_features)
     
     def _analyze_text_features(self, text: str, text_lower: str) -> Dict:
-        """Analyze text characteristics that affect sentiment interpretation"""
-        import re
-        
+        """Analyze text characteristics for better sentiment detection"""
         features = {
             'length': len(text.split()),
-            'has_caps': bool(re.search(r'[A-Z]{3,}', text)),  # 3+ consecutive caps
+            'has_caps': bool(re.search(r'[A-Z]{3,}', text)),
             'exclamation_count': text.count('!'),
             'question_count': text.count('?'),
             'has_negations': any(neg in text_lower for neg in ['not', 'no', "doesn't", "won't", "can't", "never", "nothing"]),
             'has_intensifiers': any(intens in text_lower for intens in ['very', 'extremely', 'really', 'totally', 'completely', 'absolutely']),
-            'has_comparatives': any(comp in text_lower for comp in ['better', 'worse', 'best', 'worst', 'compared to', 'than']),
-            'has_superlatives': any(sup in text_lower for sup in ['most', 'least', 'ever', 'always', 'never']),
-            'has_fedex_context': any(fedex in text_lower for fedex in ['fedex', 'delivery', 'package', 'tracking', 'shipping', 'courier']),
+            'has_superlatives': any(sup in text_lower for sup in ['most', 'least', 'ever', 'always', 'never', 'best', 'worst']),
             'punctuation_emphasis': text.count('!') + text.count('?') + len(re.findall(r'[.]{2,}', text)),
-            'has_profanity': any(prof in text_lower for prof in ['trash', 'garbage', 'crap', 'sucks', 'damn']),
+            'has_profanity': any(prof in text_lower for prof in [
+                'trash', 'garbage', 'crap', 'sucks', 'damn', 'shit', 'fuck', 
+                'useless', 'terrible', 'horrible', 'awful', 'worst', 'hate', 'trashiest'
+            ]),
+            'original_text': text_lower
         }
-        
-        # Calculate text complexity
-        features['complexity'] = min(1.0, features['length'] / 20.0)  # 0-1 scale, full at 20+ words
         
         # Calculate emphasis level
         features['emphasis_level'] = min(1.0, (
@@ -444,27 +441,39 @@ class EnhancedSentimentClassifier:
         
         return features
     
-    def _get_adaptive_word_lists(self) -> Dict:
-        """Get word lists with context and domain-specific terms"""
+    def _get_multilingual_word_lists(self) -> Dict:
+        """Enhanced multilingual word lists for better global coverage"""
         return {
             'strong_positive': {
-                'general': ['excellent', 'amazing', 'fantastic', 'perfect', 'love', 'best', 'awesome', 'outstanding', 'brilliant', 'superb', 'wonderful'],
-                'fedex_specific': ['fast delivery', 'accurate tracking', 'reliable service', 'on time', 'perfect delivery']
-            },
-            'moderate_positive': {
-                'general': ['good', 'great', 'nice', 'like', 'helpful', 'useful', 'works', 'satisfied', 'happy', 'recommend', 'smooth', 'easy'],
-                'fedex_specific': ['delivered', 'tracking works', 'found package', 'good service', 'helpful staff']
+                'english': ['excellent', 'amazing', 'fantastic', 'perfect', 'love', 'best', 'awesome', 'outstanding', 'brilliant', 'superb', 'wonderful'],
+                'spanish': ['excelente', 'increíble', 'fantástico', 'perfecto', 'amo', 'mejor', 'genial', 'maravilloso'],
+                'german': ['ausgezeichnet', 'erstaunlich', 'fantastisch', 'perfekt', 'liebe', 'beste', 'toll', 'wunderbar'],
+                'french': ['excellent', 'incroyable', 'fantastique', 'parfait', 'amour', 'meilleur', 'génial', 'merveilleux'],
+                'dutch': ['uitstekend', 'geweldig', 'fantastisch', 'perfect', 'houd van', 'beste', 'geweldig']
             },
             'strong_negative': {
-                'general': ['terrible', 'horrible', 'awful', 'worst', 'hate', 'useless', 'garbage', 'trash', 'disaster', 'nightmare', 'broken', 'disgusting'],
-                'fedex_specific': ['never delivered', 'lost package', 'tracking broken', 'delivery failed', 'package damaged', 'trashiest', 'laziest', 'slowest']
+                'english': ['terrible', 'horrible', 'awful', 'worst', 'hate', 'useless', 'garbage', 'trash', 'disaster', 'nightmare', 'broken', 'trashiest', 'laziest', 'slowest'],
+                'spanish': ['terrible', 'horrible', 'horrible', 'peor', 'odio', 'inútil', 'basura', 'desastre'],
+                'german': ['schrecklich', 'furchtbar', 'schlimm', 'schlechteste', 'hasse', 'nutzlos', 'müll', 'katastrophe'],
+                'french': ['terrible', 'horrible', 'affreux', 'pire', 'déteste', 'inutile', 'ordures', 'désastre'],
+                'dutch': ['verschrikkelijk', 'afschuwelijk', 'vreselijk', 'ergste', 'haat', 'nutteloos', 'afval']
+            },
+            'moderate_positive': {
+                'english': ['good', 'great', 'nice', 'like', 'helpful', 'useful', 'works', 'satisfied', 'happy', 'recommend'],
+                'spanish': ['bueno', 'genial', 'agradable', 'gusta', 'útil', 'funciona', 'satisfecho', 'feliz'],
+                'german': ['gut', 'toll', 'schön', 'mag', 'hilfreich', 'nützlich', 'funktioniert', 'zufrieden'],
+                'french': ['bon', 'super', 'agréable', 'aime', 'utile', 'marche', 'satisfait', 'heureux'],
+                'dutch': ['goed', 'geweldig', 'leuk', 'vind leuk', 'handig', 'werkt', 'tevreden', 'blij']
             },
             'moderate_negative': {
-                'general': ['bad', 'poor', 'disappointing', 'frustrated', 'annoying', 'slow', 'difficult', 'confusing', 'problem', 'issue', 'bug', 'crash'],
-                'fedex_specific': ['late delivery', 'tracking delayed', 'wrong address', 'missing info', 'delivery issue']
+                'english': ['bad', 'poor', 'disappointing', 'frustrated', 'annoying', 'slow', 'difficult', 'confusing', 'problem', 'issue', 'bug', 'crash', 'sucks'],
+                'spanish': ['malo', 'pobre', 'decepcionante', 'frustrado', 'molesto', 'lento', 'difícil', 'problema'],
+                'german': ['schlecht', 'arm', 'enttäuschend', 'frustriert', 'ärgerlich', 'langsam', 'schwierig', 'problem'],
+                'french': ['mauvais', 'pauvre', 'décevant', 'frustré', 'ennuyeux', 'lent', 'difficile', 'problème'],
+                'dutch': ['slecht', 'arm', 'teleurstellend', 'gefrustreerd', 'vervelend', 'langzaam', 'moeilijk', 'probleem']
             },
-            'intensifiers': ['very', 'extremely', 'really', 'totally', 'completely', 'absolutely', 'incredibly', 'amazingly'],
-            'negations': ['not', 'no', "doesn't", "won't", "can't", "isn't", "never", "nothing", "nowhere", "nobody"]
+            'intensifiers': ['very', 'extremely', 'really', 'totally', 'completely', 'absolutely', 'incredibly', 'muy', 'sehr', 'très', 'heel'],
+            'negations': ['not', 'no', "doesn't", "won't", "can't", "isn't", "never", 'nothing', 'nowhere', 'nobody', 'ningún', 'nicht', 'pas', 'niet']
         }
     
     def _calculate_context_aware_scores(self, text_lower: str, word_lists: Dict, features: Dict) -> Dict:
@@ -473,7 +482,7 @@ class EnhancedSentimentClassifier:
         words = text_lower.split()
         
         for i, word in enumerate(words):
-            # Check for negations in surrounding context (window of 3 words)
+            # Check for negations and intensifiers in context
             context_start = max(0, i - 3)
             context_end = min(len(words), i + 4)
             context = words[context_start:context_end]
@@ -481,27 +490,19 @@ class EnhancedSentimentClassifier:
             has_negation = any(neg in context for neg in word_lists['negations'])
             has_intensifier = any(intens in context for intens in word_lists['intensifiers'])
             
-            # Calculate base score for this word
+            # Calculate base score for this word across all languages
             word_score = 0.0
-            category = None
             
-            # Check word lists (combine general and domain-specific)
-            for category_name, word_categories in word_lists.items():
-                if category_name in ['intensifiers', 'negations']:
+            for sentiment_type, lang_dict in word_lists.items():
+                if sentiment_type in ['intensifiers', 'negations']:
                     continue
                     
-                for subcategory, word_list in word_categories.items():
+                for lang, word_list in lang_dict.items():
                     if any(word in phrase or phrase in ' '.join(words[max(0, i-1):i+2]) for phrase in word_list):
-                        if 'strong' in category_name:
-                            word_score = 2.0 if 'positive' in category_name else -2.0
+                        if 'strong' in sentiment_type:
+                            word_score = 2.0 if 'positive' in sentiment_type else -2.0
                         else:
-                            word_score = 1.0 if 'positive' in category_name else -1.0
-                        
-                        # Domain-specific bonus
-                        if subcategory == 'fedex_specific':
-                            word_score *= 1.2
-                        
-                        category = category_name
+                            word_score = 1.0 if 'positive' in sentiment_type else -1.0
                         break
                 if word_score != 0.0:
                     break
@@ -509,10 +510,10 @@ class EnhancedSentimentClassifier:
             if word_score != 0.0:
                 # Apply context modifiers
                 if has_intensifier:
-                    word_score *= 1.4  # Amplify sentiment
+                    word_score *= 1.4
                 
                 if has_negation:
-                    word_score *= -0.8  # Flip and reduce slightly (negations aren't perfect flips)
+                    word_score *= -0.8
                 
                 # Add to appropriate score
                 if word_score > 0:
@@ -520,7 +521,7 @@ class EnhancedSentimentClassifier:
                 else:
                     scores['negative'] += abs(word_score)
         
-        # Normalize by text length with complexity consideration
+        # Normalize by text length
         text_words = max(len(words), 1)
         scores['positive'] = scores['positive'] / text_words
         scores['negative'] = scores['negative'] / text_words
@@ -533,107 +534,64 @@ class EnhancedSentimentClassifier:
         return scores
     
     def _calculate_dynamic_thresholds(self, features: Dict) -> Dict:
-        """Calculate adaptive thresholds based on text characteristics"""
-        base_threshold = 1.2  # Base threshold (reduced from original 1.5)
+        """Calculate dynamic thresholds based on text characteristics"""
+        base_threshold = 0.8
         
-        # Adjust threshold based on text features
         threshold_adjustments = 0.0
         
-        # Shorter texts need lower thresholds (easier to classify)
+        # Shorter texts need lower thresholds
         if features['length'] < 10:
-            threshold_adjustments -= 0.2
+            threshold_adjustments -= 0.3
         elif features['length'] > 30:
             threshold_adjustments += 0.1
         
         # High emphasis texts are easier to classify
         if features['emphasis_level'] > 0.5:
-            threshold_adjustments -= 0.15
-        
-        # Negations make classification harder
-        if features['has_negations']:
-            threshold_adjustments += 0.1
-        
-        # FedEx context makes domain-specific classification easier
-        if features['has_fedex_context']:
-            threshold_adjustments -= 0.1
+            threshold_adjustments -= 0.25
         
         # Profanity is a strong negative indicator
         if features['has_profanity']:
-            threshold_adjustments -= 0.3
+            threshold_adjustments -= 0.5
         
-        # Calculate final thresholds
-        positive_threshold = max(0.8, base_threshold + threshold_adjustments)
-        negative_threshold = max(0.8, base_threshold + threshold_adjustments)
-        fallback_threshold = max(0.03, 0.05 - (threshold_adjustments * 0.5))
+        positive_threshold = max(0.6, base_threshold + threshold_adjustments)
+        negative_threshold = max(0.5, base_threshold + threshold_adjustments)
         
         return {
             'positive_threshold': positive_threshold,
-            'negative_threshold': negative_threshold,
-            'fallback_threshold': fallback_threshold
+            'negative_threshold': negative_threshold
         }
     
     def _determine_adaptive_sentiment(self, scores: Dict, thresholds: Dict, features: Dict) -> Dict:
-        """Determine sentiment using adaptive logic based on text analysis"""
+        """Determine sentiment with adaptive logic"""
         pos_score = scores['positive']
         neg_score = scores['negative']
         
-        # ENHANCED LOGIC with text-specific adaptations
+        # Check for critical negative indicators
+        critical_negative_phrases = [
+            'absolute trash', 'complete garbage', 'worst ever', 'total disaster',
+            'piece of shit', 'piece of crap', 'never again', 'hate this app'
+        ]
+        text_lower = features.get('original_text', '')
         
-        # Rule 1: Strong profanity or extreme emphasis
-        if features['has_profanity'] and neg_score > 0.1:
-            confidence = min(0.95, 0.8 + neg_score)
+        has_critical_negative = any(phrase in text_lower for phrase in critical_negative_phrases)
+        if has_critical_negative or (features['has_profanity'] and neg_score > 0.05):
+            confidence = min(0.95, 0.85 + neg_score)
             return self._create_sentiment_result('negative', confidence, pos_score, neg_score)
         
-        # Rule 2: Multiple strong indicators (text-aware)
-        if features['emphasis_level'] > 0.6:
-            if neg_score > pos_score * 0.8:  # Lower threshold for emphatic negative text
-                confidence = min(0.95, 0.7 + neg_score + features['emphasis_level'] * 0.2)
-                return self._create_sentiment_result('negative', confidence, pos_score, neg_score)
-            elif pos_score > neg_score * 0.8:  # Lower threshold for emphatic positive text
-                confidence = min(0.95, 0.7 + pos_score + features['emphasis_level'] * 0.2)
-                return self._create_sentiment_result('positive', confidence, pos_score, neg_score)
-        
-        # Rule 3: Standard comparison with adaptive thresholds
-        if pos_score > neg_score * thresholds['positive_threshold']:
+        # Apply threshold comparisons
+        if neg_score > pos_score * thresholds['negative_threshold']:
+            confidence = min(0.9, 0.6 + neg_score * 2.5)
+            return self._create_sentiment_result('negative', confidence, pos_score, neg_score)
+        elif pos_score > neg_score * thresholds['positive_threshold']:
             confidence = min(0.9, 0.5 + pos_score * 2)
-            # Boost confidence for domain-specific positive terms
-            if features['has_fedex_context']:
-                confidence = min(0.95, confidence * 1.1)
             return self._create_sentiment_result('positive', confidence, pos_score, neg_score)
-        
-        elif neg_score > pos_score * thresholds['negative_threshold']:
-            confidence = min(0.9, 0.5 + neg_score * 2)
-            # Boost confidence for domain-specific negative terms
-            if features['has_fedex_context']:
-                confidence = min(0.95, confidence * 1.1)
-            return self._create_sentiment_result('negative', confidence, pos_score, neg_score)
-        
-        # Rule 4: Adaptive fallback (text-aware threshold)
-        elif neg_score > thresholds['fallback_threshold']:
-            confidence = min(0.8, 0.4 + neg_score * 3)
-            # Increase confidence for emphasized negative text
-            if features['emphasis_level'] > 0.3:
-                confidence = min(0.9, confidence * 1.2)
-            return self._create_sentiment_result('negative', confidence, pos_score, neg_score)
-        
-        elif pos_score > thresholds['fallback_threshold']:
-            confidence = min(0.8, 0.4 + pos_score * 3)
-            # Increase confidence for emphasized positive text  
-            if features['emphasis_level'] > 0.3:
-                confidence = min(0.9, confidence * 1.2)
-            return self._create_sentiment_result('positive', confidence, pos_score, neg_score)
-        
-        # Rule 5: Neutral (only if no clear indicators)
         else:
-            confidence = 0.4 + min(0.4, (pos_score + neg_score))
-            # Reduce confidence for complex or ambiguous text
-            if features['has_negations'] and features['complexity'] > 0.5:
-                confidence *= 0.8
+            confidence = 0.4 + min(0.3, max(pos_score, neg_score))
             return self._create_sentiment_result('neutral', confidence, pos_score, neg_score)
     
     def _create_sentiment_result(self, sentiment: str, confidence: float, pos_score: float, neg_score: float) -> Dict:
         """Create standardized sentiment result"""
-        confidence = min(1.0, max(0.0, confidence))  # Ensure 0-1 range
+        confidence = min(1.0, max(0.0, confidence))
         
         if sentiment == 'positive':
             scores = {
@@ -661,8 +619,7 @@ class EnhancedSentimentClassifier:
         }
     
     def _detect_language(self, text: str) -> str:
-        """Simple language detection based on character patterns"""
-        # This is a simplified version - you could use langdetect library
+        """Simple language detection"""
         if any(ord(char) > 127 for char in text):
             return 'multilingual'
         return 'en'
@@ -690,57 +647,91 @@ class EnhancedSentimentClassifier:
     
     def analyze_batch(self, texts: List[str], batch_size: int = None) -> List[Dict]:
         """
-        Analyze multiple texts efficiently
-        Returns list of sentiment results
+        Enhanced batch processing with progress tracking and memory management
         """
         if not texts:
             return []
         
-        # Determine batch size based on device
+        # Determine batch size based on device and memory
         if batch_size is None:
-            batch_size = 32 if self.device == 'cuda' else 8
+            if self.device == 'cuda':
+                # Check available GPU memory
+                if torch.cuda.is_available():
+                    free_memory = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated()
+                    # Adjust batch size based on available memory
+                    if free_memory > 8 * 1024**3:  # > 8GB
+                        batch_size = 64
+                    elif free_memory > 4 * 1024**3:  # > 4GB
+                        batch_size = 32
+                    else:
+                        batch_size = 16
+                else:
+                    batch_size = 32
+            else:
+                batch_size = 8
         
         results = []
         total_texts = len(texts)
         
-        print(f"\n📊 Batch processing {total_texts} texts...")
-        start_time = time.time()
-        
-        for i in range(0, total_texts, batch_size):
-            batch = texts[i:i+batch_size]
-            batch_results = []
+        if self.verbose:
+            print(f"\nBatch processing {total_texts} texts (batch_size={batch_size})...")
             
-            # Process batch
+        start_time = time.time()
+        processed_count = 0
+        
+        # Process in batches with progress tracking
+        for batch_start in range(0, total_texts, batch_size):
+            batch_end = min(batch_start + batch_size, total_texts)
+            batch = texts[batch_start:batch_end]
+            
+            # Process current batch
+            batch_results = []
             for text in batch:
                 result = self.analyze_sentiment(text)
                 batch_results.append(result)
             
             results.extend(batch_results)
+            processed_count += len(batch_results)
             
-            # Progress update
-            processed = min(i + batch_size, total_texts)
-            if total_texts > 100 and processed % 100 == 0:
-                elapsed = time.time() - start_time
-                rate = processed / elapsed
-                print(f"  Progress: {processed}/{total_texts} ({rate:.1f} texts/sec)")
+            # Progress updates for large batches
+            if self.verbose and (total_texts > 50):
+                if processed_count % max(50, total_texts // 10) == 0 or processed_count == total_texts:
+                    elapsed = time.time() - start_time
+                    rate = processed_count / elapsed if elapsed > 0 else 0
+                    eta = (total_texts - processed_count) / rate if rate > 0 else 0
+                    
+                    print(f"  Progress: {processed_count:,}/{total_texts:,} "
+                          f"({processed_count/total_texts*100:.1f}%) - "
+                          f"Rate: {rate:.1f} texts/sec - "
+                          f"ETA: {eta:.1f}s")
+            
+            # Memory management for GPU
+            if self.device == 'cuda' and batch_start % (batch_size * 4) == 0:
+                torch.cuda.empty_cache()
         
+        # Final statistics
         total_time = time.time() - start_time
-        rate = total_texts / total_time
+        avg_rate = total_texts / total_time if total_time > 0 else 0
         
-        print(f"✅ Processed {total_texts} texts in {total_time:.1f}s ({rate:.1f} texts/sec)")
+        if self.verbose:
+            print(f"Batch processing complete!")
+            print(f"  Total time: {total_time:.1f}s")
+            print(f"  Average rate: {avg_rate:.1f} texts/sec")
+            print(f"  Cache hits: {sum(1 for r in results if r.get('from_cache', False))}")
         
-        # Clear GPU cache if used
+        # Final cleanup
         if self.device == 'cuda':
             torch.cuda.empty_cache()
         
         return results
     
     def get_model_info(self) -> Dict:
-        """Get information about loaded models"""
+        """Get information about the two-model ensemble"""
         info = {
-            'version': '2.0',
+            'version': '2.0_two_model_ensemble_advanced',
             'device': self.device,
-            'models_loaded': len(self.models),
+            'ensemble_enabled': True,
+            'loaded_models': len([m for m in self.models.values() if m['pipeline'] is not None]),
             'models': {}
         }
         
@@ -775,10 +766,11 @@ class EnhancedSentimentClassifier:
         # Force garbage collection
         gc.collect()
         
-        print("✅ Cleanup completed")
+        if self.verbose:
+            print("Cleanup completed")
 
 
-# Integration helper class
+# Integration helper class for combined sentiment + aspect analysis
 class SentimentAspectIntegrator:
     """Helper class to integrate sentiment and aspect classifiers"""
     
@@ -831,72 +823,96 @@ class SentimentAspectIntegrator:
                 'models_used': sentiment_result.get('models_used', 0)
             }
         }
+    
+    def analyze_batch_integrated(self, texts: List[str]) -> List[Dict]:
+        """Batch analysis with integrated sentiment and aspect classification"""
+        results = []
+        
+        # Get sentiment results first
+        sentiment_results = self.sentiment_classifier.analyze_batch(texts)
+        
+        # Process aspects with sentiment context
+        for i, text in enumerate(texts):
+            sentiment_data = sentiment_results[i] if i < len(sentiment_results) else {}
+            
+            # Get aspect classification
+            aspect_result = self.aspect_classifier.classify_aspects_multilabel(
+                text=text,
+                sentiment=sentiment_data.get('sentiment', 'neutral'),
+                sentiment_confidence=sentiment_data.get('confidence', 0.5)
+            )
+            
+            # Combine results
+            integrated_result = {
+                'text': text,
+                'sentiment': sentiment_data,
+                'aspects': aspect_result,
+                'integrated_analysis': True
+            }
+            
+            results.append(integrated_result)
+        
+        return results
 
 
-# Test if running directly
+# Test the enhanced two-model ensemble
 if __name__ == "__main__":
-    print("🚀 Testing Enhanced Sentiment Classifier V2.0 - ADAPTIVE VERSION")
+    print("Testing Enhanced Two-Model Ensemble with Advanced Features")
     print("="*70)
     
     # Initialize classifier
-    classifier = EnhancedSentimentClassifier(use_ensemble=False)
+    classifier = EnhancedSentimentClassifier(verbose=True)
     
-    # Test cases that were previously misclassified
+    # Test cases including challenging ones
     test_texts = [
-        "Slowest, laziest, trashiest delivery company on the entire planet!!!",  # Should be NEGATIVE
-        "The app has an issue when trying to view details of a delivery",        # Should be NEGATIVE  
-        "This app is absolutely TERRIBLE and keeps crashing!",                   # Should be NEGATIVE (emphatic)
-        "Love the new features, much better than before!",                       # Should be POSITIVE
-        "It's okay, nothing special but does the job.",                         # Should be NEUTRAL
-        "not receiving email for sign in, this app continues to be trash!",     # Should be NEGATIVE (negation + profanity)
-        "Great app, super easy to use and very reliable"                        # Should be POSITIVE (intensifier)
+        "not receiving email for sign in, this app continues to be trash!",
+        "Slowest, laziest, trashiest delivery company on the entire planet!!!",
+        "The app has an issue when trying to view details of a delivery",
+        "Love the new features, much better than before!",
+        "La aplicación es muy buena pero tiene problemas ocasionales",  # Spanish
+        "Die App stürzt ständig ab, sehr frustrierend",  # German
+        "Cette application est fantastique, je la recommande vivement!",  # French
+        "Complete disaster, never works, worst app ever"
     ]
     
-    print("\n📊 Adaptive Sentiment Analysis Results:")
+    print("\nTesting Enhanced Two-Model Ensemble:")
     print("-" * 70)
     
     for i, text in enumerate(test_texts, 1):
         result = classifier.analyze_sentiment(text)
         
-        sentiment = result['sentiment'].upper()
-        confidence = result['confidence']
-        method = result.get('method', 'unknown')
-        
-        # Color coding for display
-        if sentiment == 'NEGATIVE':
-            emoji = "❌"
-        elif sentiment == 'POSITIVE':
-            emoji = "✅" 
-        else:
-            emoji = "⚪"
-            
-        print(f"\n{i}. {emoji} Text: '{text[:55]}{'...' if len(text) > 55 else ''}'")
-        print(f"   Sentiment: {sentiment} (confidence: {confidence:.3f})")
-        print(f"   Method: {method}")
-        print(f"   Scores: Pos={result['scores']['positive']:.3f}, "
-              f"Neg={result['scores']['negative']:.3f}, "
-              f"Neu={result['scores']['neutral']:.3f}")
+        print(f"\n{i}. Text: '{text[:50]}{'...' if len(text) > 50 else ''}'")
+        print(f"   Sentiment: {result['sentiment'].upper()} ({result['confidence']:.3f})")
+        print(f"   Method: {result['method']}")
+        print(f"   Models Used: {result['models_used']}")
+        print(f"   Language: {result['language']}")
         print(f"   Processing: {result['processing_time']*1000:.1f}ms")
     
-    print("\n" + "="*70)
-    print("✅ ADAPTIVE Enhanced Sentiment Classifier V2.0 ready!")
-    print("🎯 Key improvements:")
-    print("   • Dynamic threshold adjustment based on text characteristics")
-    print("   • Context-aware negation and intensifier detection")
-    print("   • FedEx/logistics domain-specific pattern recognition")
-    print("   • Punctuation and emphasis analysis (!!!, CAPS)")
-    print("   • Profanity and superlative handling")
-    print("   • 'Trashiest', 'slowest', 'issue' now properly detected!")
+    # Test batch processing
+    print(f"\n" + "="*70)
+    print("Testing Enhanced Batch Processing:")
+    batch_results = classifier.analyze_batch(test_texts[:4], batch_size=2)
+    print(f"Processed {len(batch_results)} texts in batch mode")
     
     # Print model info
     print("\n" + "="*70)
-    print("Model Information:")
+    print("Enhanced Two-Model Ensemble Information:")
     info = classifier.get_model_info()
     print(f"Version: {info['version']}")
     print(f"Device: {info['device']}")
-    print(f"Models loaded: {info['models_loaded']}")
+    print(f"Models loaded: {info['loaded_models']}")
     for name, model_info in info['models'].items():
-        print(f"  - {name}: {model_info['model_id']} (weight: {model_info['weight']:.2f})")
+        if model_info['model_id'] != 'rule_based':
+            print(f"  {name}: {model_info['model_id']} (weight: {model_info['weight']:.3f})")
+    
+    print(f"\nAdvanced features included:")
+    print(f"  ✓ SentimentAspectIntegrator helper class")
+    print(f"  ✓ Enhanced multilingual rule-based fallback")
+    print(f"  ✓ Advanced batch processing with progress tracking")
+    print(f"  ✓ Dynamic memory management")
+    print(f"  ✓ Context-aware sentiment detection")
+    
+    print(f"\nTwo-model ensemble with advanced features ready!")
     
     # Cleanup
     classifier.cleanup()
