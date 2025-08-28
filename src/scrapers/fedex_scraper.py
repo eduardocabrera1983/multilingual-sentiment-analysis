@@ -525,7 +525,7 @@ class FedExReviewAnalyzer:
                 'sentiment': sentiment_result['sentiment'],
                 'sentiment_confidence': sentiment_result['confidence'],
                 'sentiment_scores': sentiment_result['scores'],
-                'sentiment_model_used': sentiment_result['model_used'],
+                'sentiment_model_used': sentiment_result.get('model_used', 'enhanced_ensemble'),
                 
                 # Combined insights
                 'is_mixed_concern': len(aspect_result['secondary_aspects']) > 0,
