@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Production-Ready Flask App for Multilingual Sentiment Analysis
-UPDATED for Two-Model Ensemble Integration
+UPDATED for Two-Model Ensemble Integration + Auto-FedEx Analysis
 Supports both CPU and GPU with automatic detection and manual override
 """
 
@@ -10,12 +10,101 @@ import sys
 import json
 import time
 import logging
-from datetime import datetime
+import threading
+from datetime import datetime, timedelta
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for
 from werkzeug.utils import secure_filename
 import pandas as pd
 import numpy as np
+
+# =====================================================
+# CUSTOM JSON ENCODER - SOLUTION FOR SERIALIZATION
+# =====================================================
+from flask.json.provider import DefaultJSONProvider
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder to handle objects that aren't natively JSON serializable
+    Handles: LineData objects, numpy types, datetime objects, pandas objects, custom classes
+    """
+    def default(self, obj):
+        try:
+            # Handle numpy types
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            
+            # Handle datetime objects
+            elif isinstance(obj, (datetime, pd.Timestamp)):
+                return obj.isoformat()
+            elif isinstance(obj, timedelta):
+                return obj.total_seconds()
+            
+            # Handle pandas objects
+            elif isinstance(obj, pd.Series):
+                return obj.to_dict()
+            elif isinstance(obj, pd.DataFrame):
+                return obj.to_dict('records')
+            
+            # Handle custom objects with __dict__ (like LineData)
+            elif hasattr(obj, '__dict__'):
+                # Convert custom objects to dictionary
+                result = {}
+                for key, value in obj.__dict__.items():
+                    # Skip private attributes and methods
+                    if not key.startswith('_'):
+                        try:
+                            # Recursively serialize the value
+                            result[key] = json.loads(json.dumps(value, cls=CustomJSONEncoder))
+                        except (TypeError, ValueError):
+                            # If we can't serialize the value, convert to string
+                            result[key] = str(value)
+                return result
+            
+            # Handle objects with to_dict method
+            elif hasattr(obj, 'to_dict') and callable(getattr(obj, 'to_dict')):
+                return obj.to_dict()
+            
+            # Handle objects with to_json method
+            elif hasattr(obj, 'to_json') and callable(getattr(obj, 'to_json')):
+                return json.loads(obj.to_json())
+            
+            # Handle sets
+            elif isinstance(obj, set):
+                return list(obj)
+            
+            # Handle complex numbers
+            elif isinstance(obj, complex):
+                return {'real': obj.real, 'imag': obj.imag}
+            
+            # Handle pathlib Path objects
+            elif isinstance(obj, Path):
+                return str(obj)
+            
+            # For any other object, try to convert to string as last resort
+            else:
+                return str(obj)
+                
+        except Exception as e:
+            # If all else fails, return a string representation
+            return f"<Non-serializable: {type(obj).__name__}>"
+
+class CustomJSONProvider(DefaultJSONProvider):
+    """
+    Custom JSON provider for Flask that uses our custom encoder
+    This ensures both API responses AND template rendering use our custom serialization
+    """
+    def dumps(self, obj, **kwargs):
+        return json.dumps(obj, cls=CustomJSONEncoder, **kwargs)
+    
+    def loads(self, s):
+        return json.loads(s)
 
 # Configure device preference from environment
 FORCE_CPU = os.environ.get('FORCE_CPU', 'false').lower() == 'true'
@@ -67,10 +156,25 @@ except ImportError as e:
     print(f"[WARNING] Could not import enhanced models: {e}")
     MODELS_AVAILABLE = False
 
+# NEW: Import FedEx analyzer for auto-analysis
+try:
+    from src.scrapers.fedex_scraper import FedExReviewAnalyzer
+    FEDEX_SCRAPER_AVAILABLE = True
+    print("[SUCCESS] FedEx scraper imported successfully!")
+except ImportError as e:
+    FEDEX_SCRAPER_AVAILABLE = False
+    print(f"[WARNING] FedEx scraper not available: {e}")
+
 # Initialize Flask with correct paths
 app = Flask(__name__, 
            template_folder='web_app/templates',
            static_folder='web_app/static')
+
+# =====================================================
+# APPLY CUSTOM JSON PROVIDER TO FLASK APP
+# =====================================================
+app.json = CustomJSONProvider(app)
+print("[SUCCESS] Custom JSON provider applied to Flask app (handles both API + templates)")
 
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ml-sentiment-2025')
@@ -86,9 +190,26 @@ app.config['DEBUG'] = os.environ.get('FLASK_ENV', 'development') == 'development
 for folder in ['uploads', 'cache', 'data']:
     os.makedirs(project_root / folder, exist_ok=True)
 
-# Global variables
+# Global variables (EXISTING)
 ml_pipeline = None
 model_status = {'loaded': False, 'error': None, 'device': 'unknown', 'ensemble_info': {}}
+
+# NEW: Global variables for auto-analysis
+fedex_analyzer = None
+analysis_status = {
+    'running': False,
+    'last_run': None,
+    'last_file': None,
+    'total_reviews': 0,
+    'error': None
+}
+
+# NEW: Data refresh tracking
+data_refresh_status = {
+    'last_check': datetime.now(),
+    'latest_file': None,
+    'needs_refresh': False
+}
 
 # Logging configuration
 log_level = logging.DEBUG if app.config['DEBUG'] else logging.INFO
@@ -98,6 +219,56 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# =====================================================
+# HELPER FUNCTION FOR SAFE JSON RESPONSES
+# =====================================================
+def safe_jsonify(*args, **kwargs):
+    """
+    Wrapper around jsonify that uses our custom encoder
+    This provides extra safety for any edge cases
+    """
+    try:
+        return jsonify(*args, **kwargs)
+    except TypeError as e:
+        logger.error(f"JSON serialization error: {e}")
+        # Return error response instead of crashing
+        error_response = {
+            'error': 'Serialization failed',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+        return jsonify(error_response), 500
+
+def clean_data_for_template(data):
+    """
+    Clean data dictionary to ensure all values are JSON serializable for templates
+    This is an extra safety layer for template rendering
+    """
+    if not isinstance(data, dict):
+        return data
+    
+    cleaned = {}
+    for key, value in data.items():
+        if isinstance(value, timedelta):
+            cleaned[key] = value.total_seconds()
+        elif isinstance(value, (datetime, pd.Timestamp)):
+            cleaned[key] = value.isoformat()
+        elif isinstance(value, dict):
+            cleaned[key] = clean_data_for_template(value)
+        elif isinstance(value, list):
+            cleaned[key] = [clean_data_for_template(item) if isinstance(item, dict) else 
+                           (item.total_seconds() if isinstance(item, timedelta) else 
+                           (item.isoformat() if isinstance(item, (datetime, pd.Timestamp)) else item)) 
+                           for item in value]
+        elif hasattr(value, '__dict__') and not isinstance(value, (str, int, float, bool)):
+            # Convert custom objects to dict
+            cleaned[key] = clean_data_for_template(value.__dict__)
+        else:
+            cleaned[key] = value
+    
+    return cleaned
+
+# EXISTING FUNCTION (unchanged)
 def load_ml_models():
     """Load ML models with two-model ensemble support and device flexibility"""
     global ml_pipeline, model_status
@@ -179,29 +350,268 @@ def load_ml_models():
         logger.error(f"Failed to load models: {error_msg}")
         print(f"[ERROR] Model loading failed: {error_msg}")
 
-# Initialize models on startup
+# NEW: FedEx analyzer initialization
+def initialize_fedex_analyzer():
+    """Initialize FedEx analyzer"""
+    global fedex_analyzer
+    
+    if not FEDEX_SCRAPER_AVAILABLE:
+        logger.warning("FedEx scraper not available")
+        return False
+        
+    try:
+        fedex_analyzer = FedExReviewAnalyzer(
+            data_dir=str(project_root / 'data'),
+            use_enhanced_models=MODELS_AVAILABLE and model_status['loaded'],
+            device='auto'
+        )
+        logger.info("FedEx analyzer initialized successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to initialize FedEx analyzer: {e}")
+        return False
+
+# NEW: Check for existing FedEx data (7-day freshness)
+def check_existing_fedex_data():
+    """Check if FedEx analysis data already exists"""
+    data_dir = Path(app.config['DATA_FOLDER'])
+    cache_dir = Path(app.config['CACHE_FOLDER'])
+    
+    # Look for FedEx-specific files
+    fedex_patterns = [
+        'fedex_reviews_enhanced_ensemble_*.csv',
+        'fedex_reviews_*.csv'
+    ]
+    
+    for directory in [data_dir, cache_dir]:
+        for pattern in fedex_patterns:
+            files = list(directory.glob(pattern))
+            if files:
+                latest = max(files, key=lambda p: p.stat().st_mtime)
+                file_age = datetime.now() - datetime.fromtimestamp(latest.stat().st_mtime)
+                
+                # Consider data fresh if less than 7 days old
+                if file_age < timedelta(days=7):
+                    logger.info(f"Found fresh FedEx data: {latest.name} ({file_age.days} days, {file_age.seconds//3600} hours old)")
+                    return latest, len(pd.read_csv(latest)) if latest.exists() else 0
+                else:
+                    logger.info(f"Found stale FedEx data: {latest.name} ({file_age.days} days old)")
+    
+    return None, 0
+
+# NEW: Run FedEx analysis in background
+def run_fedex_analysis_background(target_reviews=500):
+    """Run FedEx analysis in background thread"""
+    global analysis_status
+    
+    def analysis_thread():
+        try:
+            analysis_status['running'] = True
+            analysis_status['error'] = None
+            logger.info(f"Starting background FedEx analysis for {target_reviews} reviews")
+            
+            if not fedex_analyzer:
+                if not initialize_fedex_analyzer():
+                    raise Exception("Failed to initialize FedEx analyzer")
+            
+            # Run the analysis
+            df = fedex_analyzer.analyze_fedex_reviews(
+                count=target_reviews,
+                real_only=True
+            )
+            
+            if df is not None and len(df) > 0:
+                analysis_status['last_run'] = datetime.now()
+                analysis_status['total_reviews'] = len(df)
+                
+                # Find the generated file
+                data_dir = Path(app.config['DATA_FOLDER'])
+                fedex_files = list(data_dir.glob('fedex_reviews_enhanced_ensemble_*.csv'))
+                if fedex_files:
+                    latest = max(fedex_files, key=lambda p: p.stat().st_mtime)
+                    analysis_status['last_file'] = str(latest)
+                    data_refresh_status['needs_refresh'] = True
+                    logger.info(f"FedEx analysis completed: {len(df)} reviews saved to {latest.name}")
+                else:
+                    logger.warning("FedEx analysis completed but file not found")
+            else:
+                raise Exception("FedEx analysis returned no data")
+                
+        except Exception as e:
+            analysis_status['error'] = str(e)
+            logger.error(f"Background FedEx analysis failed: {e}")
+        finally:
+            analysis_status['running'] = False
+    
+    # Start the background thread
+    thread = threading.Thread(target=analysis_thread)
+    thread.daemon = True
+    thread.start()
+    
+    return thread
+
+# NEW: Get latest analysis data with latest time prioritization
+def get_latest_analysis_data():
+    """Get the most recent analysis data - newest file has highest priority"""
+    data_sources = []
+    
+    # Find all CSV files in both directories
+    data_dir = Path(app.config['DATA_FOLDER'])
+    cache_dir = Path(app.config['CACHE_FOLDER'])
+    
+    # Collect all CSV files with their types and modification times
+    for directory in [data_dir, cache_dir]:
+        if directory.exists():
+            # FedEx ensemble files
+            for f in directory.glob('fedex_reviews_enhanced_ensemble_*.csv'):
+                data_sources.append((f, 'FedEx Real Data', f.stat().st_mtime))
+            
+            # Regular FedEx files (exclude ensemble to avoid duplicates)
+            for f in directory.glob('fedex_reviews_*.csv'):
+                if 'enhanced_ensemble' not in f.name:
+                    data_sources.append((f, 'FedEx Data', f.stat().st_mtime))
+            
+            # Ensemble results
+            for f in directory.glob('results_ensemble_*.csv'):
+                data_sources.append((f, 'Ensemble Results', f.stat().st_mtime))
+            
+            # Regular results
+            for f in directory.glob('results_*.csv'):
+                data_sources.append((f, 'Analysis Results', f.stat().st_mtime))
+    
+    # Sort by modification time - NEWEST FIRST (highest priority)
+    data_sources.sort(key=lambda x: x[2], reverse=True)
+    
+    # Try to load files in order (newest first)
+    for data_path, source_name, mtime in data_sources:
+        if data_path.exists():
+            try:
+                # Enhanced CSV reading with better error handling
+                df = pd.read_csv(data_path, encoding='utf-8')
+                
+                # Skip files with malformed data or wrong structure
+                if len(df.columns) < 5:  # Basic sanity check
+                    logger.warning(f"Skipping {data_path.name} - appears to have malformed columns")
+                    continue
+                
+                # Check if this looks like a properly formatted file
+                expected_cols = ['sentiment', 'primary_aspect', 'classification_type', 'priority_level']
+                has_predicted_cols = any(col.startswith('predicted_') for col in df.columns)
+                has_original_cols = any(col in df.columns for col in expected_cols)
+                
+                if not (has_original_cols or has_predicted_cols):
+                    logger.warning(f"Skipping {data_path.name} - missing expected columns")
+                    continue
+                
+                if len(df) > 0:
+                    data = generate_dashboard_data(df)
+                    data['source'] = source_name
+                    data['file_path'] = str(data_path)
+                    data['file_age'] = datetime.now() - datetime.fromtimestamp(data_path.stat().st_mtime)
+                    data['is_fedex_data'] = 'fedex' in data_path.name.lower()
+                    
+                    # Log which file was actually loaded with timestamp
+                    file_time = datetime.fromtimestamp(mtime)
+                    logger.info(f"Dashboard loaded: {source_name} from {data_path.name} ({len(df)} reviews) - Modified: {file_time}")
+                    return data, False  # Not demo mode
+                    
+            except Exception as e:
+                logger.warning(f"Could not load {data_path}: {e}")
+                continue
+    
+    # No data found
+    logger.info("No valid data files found - using demo mode")
+    return None, True
+
+# NEW: Monitor data changes (daily checks)
+def monitor_data_changes():
+    """Monitor for new data files and set refresh flag"""
+    global data_refresh_status
+    
+    def monitor_thread():
+        while True:
+            try:
+                # Check for new files once per day
+                time.sleep(86400)  # 24 hours = 86400 seconds
+                
+                current_latest = None
+                latest_mtime = 0
+                
+                # Check all data directories for new files
+                for directory in [Path(app.config['DATA_FOLDER']), Path(app.config['CACHE_FOLDER'])]:
+                    for pattern in ['*.csv']:
+                        for file_path in directory.glob(pattern):
+                            mtime = file_path.stat().st_mtime
+                            if mtime > latest_mtime:
+                                latest_mtime = mtime
+                                current_latest = file_path
+                
+                # Check if we have a new latest file
+                if (current_latest != data_refresh_status['latest_file'] and 
+                    datetime.fromtimestamp(latest_mtime) > data_refresh_status['last_check']):
+                    
+                    data_refresh_status['latest_file'] = current_latest
+                    data_refresh_status['needs_refresh'] = True
+                    data_refresh_status['last_check'] = datetime.now()
+                    logger.info(f"Daily check: New data detected - {current_latest.name if current_latest else 'None'}")
+                else:
+                    logger.info("Daily check: No new data detected")
+                
+            except Exception as e:
+                logger.error(f"Error in daily data monitoring: {e}")
+    
+    # Start monitoring thread
+    thread = threading.Thread(target=monitor_thread)
+    thread.daemon = True
+    thread.start()
+    logger.info("Daily data monitoring started")
+
+# Initialize models on startup (EXISTING)
 print("\n" + "="*70)
 print("INITIALIZING PRODUCTION ML PIPELINE")
-print("Two-Model Ensemble Integration")
+print("Two-Model Ensemble Integration + Auto-FedEx Analysis")
 print("="*70)
 load_ml_models()
+
+# NEW: Initialize FedEx data checking and monitoring
+existing_file, review_count = check_existing_fedex_data()
+
+if existing_file:
+    analysis_status['last_file'] = str(existing_file)
+    analysis_status['total_reviews'] = review_count
+    analysis_status['last_run'] = datetime.fromtimestamp(existing_file.stat().st_mtime)
+    print(f"[INFO] Found existing FedEx data: {review_count} reviews")
+else:
+    print("[INFO] No fresh FedEx data found - will analyze on first dashboard access")
+
+# NEW: Start data monitoring
+monitor_data_changes()
+
 print("="*70 + "\n")
 
-# --- ROUTES ---
+# --- ROUTES (USE SAFE_JSONIFY WHERE NEEDED) ---
 
+# EXISTING ROUTE (enhanced with safe_jsonify for JSON responses)
 @app.route('/health')
 def health_check():
     """Health check endpoint for monitoring with ensemble information"""
     health_data = {
         'status': 'healthy' if model_status['loaded'] else 'degraded',
-        'service': 'multilingual-sentiment-analysis',
-        'version': '2.0_two_model_ensemble',
+        'service': 'multilingual-sentiment-analysis-with-fedex',  # Updated
+        'version': '2.1_auto_analysis',  # Updated
         'models_loaded': model_status['loaded'],
         'device': model_status.get('device', 'unknown'),
         'gpu_available': GPU_AVAILABLE,
         'force_cpu': FORCE_CPU,
         'ensemble_enabled': model_status.get('ensemble_info', {}).get('sentiment_details', {}).get('ensemble_enabled', False),
         'ensemble_models_loaded': model_status.get('ensemble_info', {}).get('sentiment_details', {}).get('loaded_models', 0),
+        'fedex_analyzer_available': FEDEX_SCRAPER_AVAILABLE,  # NEW
+        'analysis_status': {  # NEW
+            'running': analysis_status['running'],
+            'last_run': analysis_status['last_run'].isoformat() if analysis_status['last_run'] else None,
+            'total_reviews': analysis_status['total_reviews'],
+            'has_error': analysis_status['error'] is not None
+        },
         'timestamp': datetime.now().isoformat()
     }
     
@@ -213,8 +623,9 @@ def health_check():
         }
     
     status_code = 200 if model_status['loaded'] else 503
-    return jsonify(health_data), status_code
+    return safe_jsonify(health_data), status_code
 
+# EXISTING ROUTE (unchanged)
 @app.route('/')
 def index():
     """Homepage with system status and ensemble information"""
@@ -227,6 +638,8 @@ def index():
         'features': ensemble_info.get('features', [
             'Multi-label Aspect Classification',
             'Two-Model Sentiment Ensemble',
+            'Automatic FedEx Review Analysis',  # NEW
+            'Real-time Dashboard Updates',      # NEW
             'User Experience Prioritization',
             'Business Intelligence Generation',
             f"{'GPU' if GPU_AVAILABLE and not FORCE_CPU else 'CPU'} Processing"
@@ -234,10 +647,18 @@ def index():
         'device_info': model_status.get('device', 'Unknown'),
         'ensemble_enabled': sentiment_details.get('ensemble_enabled', False),
         'ensemble_models': sentiment_details.get('loaded_models', 0),
-        'pipeline_version': ensemble_info.get('version', '2.0')
+        'pipeline_version': ensemble_info.get('version', '2.0'),
+        'fedex_analysis': {  # NEW
+            'available': FEDEX_SCRAPER_AVAILABLE,
+            'running': analysis_status['running'],
+            'total_reviews': analysis_status['total_reviews'],
+            'last_run': analysis_status['last_run'],
+            'has_data': analysis_status['last_file'] is not None
+        }
     }
     return render_template('index.html', stats=stats, model_status=model_status)
 
+# EXISTING ROUTE (unchanged)
 @app.route('/analyze', methods=['GET', 'POST'])
 def analyze_text():
     """Single text analysis endpoint with two-model ensemble support"""
@@ -286,6 +707,7 @@ def analyze_text():
     
     return render_template('analyze.html', model_status=model_status)
 
+# EXISTING ROUTE (enhanced with dashboard refresh)
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     """Batch file processing endpoint with two-model ensemble optimization"""
@@ -341,6 +763,10 @@ def upload_file():
                     result_path = project_root / 'cache' / result_filename
                     results_df.to_csv(result_path, index=False)
                     
+                    # NEW: Trigger dashboard refresh
+                    data_refresh_status['needs_refresh'] = True
+                    data_refresh_status['latest_file'] = result_path
+                    
                     logger.info(f"Results saved to {result_filename}")
                     
                     # Calculate summary statistics with ensemble metrics
@@ -358,6 +784,7 @@ def upload_file():
                             'columns_added': [col for col in results_df.columns if col.startswith('predicted_')],
                             'business_intelligence': results_df.attrs.get('business_intelligence', {}),
                             'ensemble_performance': results_df.attrs.get('ensemble_performance', {}),
+                            'dashboard_updated': True,  # NEW
                             **summary_stats,
                             **ensemble_metrics
                         },
@@ -365,7 +792,7 @@ def upload_file():
                         'download_file': result_filename
                     }
                     
-                    flash(f'Successfully processed {len(df)} texts in {processing_time:.1f} seconds with two-model ensemble', 'success')
+                    flash(f'Successfully processed {len(df)} texts in {processing_time:.1f} seconds with two-model ensemble. Dashboard will refresh with new data.', 'success')  # Enhanced message
                     
                     return render_template('batch_results.html', 
                                          results=results,
@@ -389,54 +816,58 @@ def upload_file():
     
     return render_template('upload.html', model_status=model_status)
 
+# ENHANCED ROUTE (with automatic FedEx analysis)
 @app.route('/dashboard')
 def dashboard():
-    """Business Intelligence Dashboard with ensemble performance metrics"""
-    data = None
-    demo_mode = True
+    """Enhanced dashboard with automatic FedEx analysis and refresh"""
+    global data_refresh_status
     
-    # Try to load real data (prioritize ensemble results)
-    data_sources = [
-        *[(f, 'Ensemble Results') for f in (project_root / 'cache').glob('results_ensemble_*.csv')],
-        (project_root / 'data' / 'fedex_reviews_enhanced_ensemble_*.csv', 'FedEx Ensemble Data'),
-        *[(f, 'Cached Results') for f in (project_root / 'cache').glob('results_*.csv')]
-    ]
+    # Check if we need to start FedEx analysis
+    data, demo_mode = get_latest_analysis_data()
     
-    for data_path, source_name in data_sources:
-        if hasattr(data_path, 'exists') and data_path.exists():
-            try:
-                df = pd.read_csv(data_path)
-                data = generate_dashboard_data(df)
-                data['source'] = source_name
-                demo_mode = False
-                logger.info(f"Dashboard loaded data from: {source_name}")
-                break
-            except Exception as e:
-                logger.warning(f"Could not load {data_path}: {e}")
-                continue
+    if demo_mode and FEDEX_SCRAPER_AVAILABLE and not analysis_status['running']:
+        # No real data and not currently analyzing - start background analysis
+        logger.info("No data found - starting automatic FedEx analysis")
+        run_fedex_analysis_background(target_reviews=500)
+        
+        # Show loading state
+        return render_template('dashboard_loading.html', 
+                             analysis_status=clean_data_for_template(analysis_status),
+                             model_status=clean_data_for_template(model_status))
     
-    # Fallback to demo data
-    if data is None:
+    # Reset refresh flag since we're serving fresh data
+    data_refresh_status['needs_refresh'] = False
+    
+    # Provide demo data if still no real data
+    if demo_mode:
         data = {
-            'total_reviews': 1247,
-            'mixed_concerns_pct': '23',
-            'ux_priority_pct': '34',
-            'high_priority_pct': '18',
-            'sentiment_distribution': {'positive': 67, 'negative': 23, 'neutral': 10},
-            'source': 'Demo Data',
+            'total_reviews': 0,
+            'mixed_concerns_pct': '0',
+            'ux_priority_pct': '0',
+            'high_priority_pct': '0',
+            'sentiment_distribution': {'positive': 50, 'negative': 30, 'neutral': 20},
+            'source': 'Demo Data - Analysis Starting',
             'ensemble_metrics': {
-                'ensemble_usage_pct': '85',
-                'cache_hit_rate_pct': '42',
-                'avg_processing_time_ms': '124',
-                'models_used_avg': '1.8'
-            }
+                'ensemble_usage_pct': '0',
+                'cache_hit_rate_pct': '0',
+                'avg_processing_time_ms': '0',
+                'models_used_avg': '0'
+            },
+            'is_fedex_data': False
         }
+    
+    # Clean data for template to ensure JSON serialization works
+    clean_data = clean_data_for_template(data) if data else None
+    clean_model_status = clean_data_for_template(model_status)
+    clean_analysis_status = clean_data_for_template(analysis_status)
     
     return render_template('dashboard.html', 
                          demo_mode=demo_mode,
-                         data=data,
-                         model_status=model_status)
+                         data=clean_data,
+                         model_status=clean_model_status,
+                         analysis_status=clean_analysis_status)  # NEW
 
+# EXISTING ROUTE (unchanged)
 @app.route('/about')
 def about():
     """About page with methodology including two-model ensemble details"""
@@ -478,6 +909,55 @@ def about():
                          methodology=methodology,
                          model_status=model_status)
 
+# NEW: API endpoints for dashboard status and data (using safe_jsonify)
+@app.route('/api/dashboard/status')
+def dashboard_status():
+    """API endpoint for dashboard status checks"""
+    return safe_jsonify({
+        'analysis_running': analysis_status['running'],
+        'needs_refresh': data_refresh_status['needs_refresh'],
+        'last_run': analysis_status['last_run'].isoformat() if analysis_status['last_run'] else None,
+        'total_reviews': analysis_status['total_reviews'],
+        'error': analysis_status['error'],
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/dashboard/data')
+def dashboard_data_api():
+    """API endpoint to get fresh dashboard data"""
+    global data_refresh_status
+    
+    data, demo_mode = get_latest_analysis_data()
+    data_refresh_status['needs_refresh'] = False
+    
+    return safe_jsonify({
+        'demo_mode': demo_mode,
+        'data': data,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/fedex/analyze', methods=['POST'])
+def trigger_fedex_analysis():
+    """API endpoint to manually trigger FedEx analysis"""
+    if analysis_status['running']:
+        return safe_jsonify({
+            'error': 'Analysis already running',
+            'status': 'running'
+        }), 409
+    
+    # Get parameters
+    target_reviews = request.json.get('target_reviews', 500) if request.is_json else 500
+    
+    # Start analysis
+    thread = run_fedex_analysis_background(target_reviews)
+    
+    return safe_jsonify({
+        'message': f'FedEx analysis started for {target_reviews} reviews',
+        'status': 'started',
+        'timestamp': datetime.now().isoformat()
+    })
+
+# EXISTING ROUTE (enhanced with safe_jsonify)
 @app.route('/api/analyze', methods=['POST'])
 def api_analyze():
     """REST API endpoint for text analysis with ensemble metadata"""
@@ -485,13 +965,13 @@ def api_analyze():
         data = request.get_json()
         
         if not data:
-            return jsonify({'error': 'No JSON data provided'}), 400
+            return safe_jsonify({'error': 'No JSON data provided'}), 400
             
         text = data.get('text', '')
         language = data.get('language', 'auto')
         
         if not text:
-            return jsonify({'error': 'No text provided'}), 400
+            return safe_jsonify({'error': 'No text provided'}), 400
         
         if ml_pipeline and model_status['loaded']:
             result = ml_pipeline.analyze_text(text, language)
@@ -503,18 +983,19 @@ def api_analyze():
                 'version': '2.0_two_model_ensemble'
             }
             
-            return jsonify(result), 200
+            return safe_jsonify(result), 200
         else:
             fallback = basic_analysis_fallback(text)
-            return jsonify({
+            return safe_jsonify({
                 'warning': 'Models not loaded, using fallback',
                 'result': fallback
             }), 503
             
     except Exception as e:
         logger.error(f"API error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return safe_jsonify({'error': str(e)}), 500
 
+# EXISTING ROUTE (enhanced with safe_jsonify)
 @app.route('/api/batch', methods=['POST'])
 def api_batch_analyze():
     """REST API endpoint for batch analysis with ensemble optimization"""
@@ -522,11 +1003,11 @@ def api_batch_analyze():
         data = request.get_json()
         
         if not data or 'texts' not in data:
-            return jsonify({'error': 'No texts provided'}), 400
+            return safe_jsonify({'error': 'No texts provided'}), 400
         
         texts = data['texts']
         if not isinstance(texts, list):
-            return jsonify({'error': 'texts must be a list'}), 400
+            return safe_jsonify({'error': 'texts must be a list'}), 400
         
         if ml_pipeline and model_status['loaded']:
             # Use optimized batch processing
@@ -544,19 +1025,20 @@ def api_batch_analyze():
                 'average_confidence': np.mean([r.get('sentiment_confidence', 0) for r in results])
             }
             
-            return jsonify({
+            return safe_jsonify({
                 'results': results,
                 'count': len(results),
                 'device_used': model_status.get('device', 'unknown'),
                 'ensemble_metrics': ensemble_metrics
             }), 200
         else:
-            return jsonify({'error': 'Models not loaded'}), 503
+            return safe_jsonify({'error': 'Models not loaded'}), 503
             
     except Exception as e:
         logger.error(f"Batch API error: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return safe_jsonify({'error': str(e)}), 500
 
+# EXISTING ROUTE (unchanged)
 @app.route('/export/results/<analysis_type>')
 def export_results(analysis_type):
     """Export analysis results as CSV"""
@@ -587,6 +1069,7 @@ def export_results(analysis_type):
         flash(f'Export failed: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
+# EXISTING ROUTE (unchanged)
 @app.route('/download/<filename>')
 def download_file(filename):
     """Download specific result file"""
@@ -610,8 +1093,9 @@ def download_file(filename):
         flash(f'Download failed: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
-# --- HELPER FUNCTIONS ---
+# --- HELPER FUNCTIONS (ALL EXISTING + SOME ENHANCEMENTS) ---
 
+# EXISTING FUNCTION (unchanged)
 def basic_analysis_fallback(text):
     """Fallback analysis when models aren't loaded"""
     return {
@@ -639,11 +1123,13 @@ def basic_analysis_fallback(text):
         }
     }
 
+# EXISTING FUNCTION (unchanged)
 def allowed_file(filename):
     """Check if file extension is allowed"""
     ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls', 'tsv'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# EXISTING FUNCTION (unchanged)
 def find_text_column(df):
     """Intelligently find the text column in a dataframe"""
     # Common text column names
@@ -667,6 +1153,7 @@ def find_text_column(df):
     
     return None
 
+# EXISTING FUNCTION (unchanged)
 def calculate_summary_stats(df):
     """Calculate summary statistics from results dataframe"""
     stats = {}
@@ -689,6 +1176,7 @@ def calculate_summary_stats(df):
     
     return stats
 
+# EXISTING FUNCTION (unchanged)
 def calculate_ensemble_metrics(df):
     """Calculate two-model ensemble specific metrics"""
     metrics = {}
@@ -710,6 +1198,7 @@ def calculate_ensemble_metrics(df):
     
     return metrics
 
+# ENHANCED FUNCTION (works with both existing and FedEx data)
 def generate_dashboard_data(df):
     """Generate dashboard data from dataframe with ensemble metrics"""
     data = {
@@ -726,17 +1215,26 @@ def generate_dashboard_data(df):
         }
     }
     
-    # Update with actual data if available
+    # Update with actual data if available - supports both formats
     if 'predicted_classification_type' in df.columns:
         mixed = (df['predicted_classification_type'] == 'mixed_concerns').mean() * 100
+        data['mixed_concerns_pct'] = f"{mixed:.1f}"
+    elif 'classification_type' in df.columns:  # FedEx format
+        mixed = (df['classification_type'] == 'mixed_concerns').mean() * 100
         data['mixed_concerns_pct'] = f"{mixed:.1f}"
     
     if 'predicted_primary_aspect' in df.columns:
         ux = (df['predicted_primary_aspect'] == 'user_experience').mean() * 100
         data['ux_priority_pct'] = f"{ux:.1f}"
+    elif 'primary_aspect' in df.columns:  # FedEx format
+        ux = (df['primary_aspect'] == 'user_experience').mean() * 100
+        data['ux_priority_pct'] = f"{ux:.1f}"
     
     if 'predicted_priority_level' in df.columns:
         high = (df['predicted_priority_level'] == 'HIGH').mean() * 100
+        data['high_priority_pct'] = f"{high:.1f}"
+    elif 'priority_level' in df.columns:  # FedEx format
+        high = (df['priority_level'] == 'HIGH').mean() * 100
         data['high_priority_pct'] = f"{high:.1f}"
     
     if 'predicted_sentiment' in df.columns:
@@ -746,23 +1244,39 @@ def generate_dashboard_data(df):
             'negative': int(sentiments.get('negative', 0)),
             'neutral': int(sentiments.get('neutral', 0))
         }
+    elif 'sentiment' in df.columns:  # FedEx format
+        sentiments = df['sentiment'].value_counts(normalize=True) * 100
+        data['sentiment_distribution'] = {
+            'positive': int(sentiments.get('positive', 0)),
+            'negative': int(sentiments.get('negative', 0)),
+            'neutral': int(sentiments.get('neutral', 0))
+        }
     
-    # Ensemble-specific metrics
+    # Ensemble-specific metrics - supports both formats
     if 'predicted_sentiment_method' in df.columns:
         ensemble_usage = (df['predicted_sentiment_method'] == 'two_model_ensemble').mean() * 100
+        data['ensemble_metrics']['ensemble_usage_pct'] = f"{ensemble_usage:.1f}"
+    elif 'sentiment_method' in df.columns:  # FedEx format
+        ensemble_usage = (df['sentiment_method'] == 'two_model_ensemble').mean() * 100
         data['ensemble_metrics']['ensemble_usage_pct'] = f"{ensemble_usage:.1f}"
     
     if 'predicted_sentiment_from_cache' in df.columns:
         cache_rate = df['predicted_sentiment_from_cache'].mean() * 100
         data['ensemble_metrics']['cache_hit_rate_pct'] = f"{cache_rate:.1f}"
+    elif 'sentiment_from_cache' in df.columns:  # FedEx format
+        cache_rate = df['sentiment_from_cache'].mean() * 100
+        data['ensemble_metrics']['cache_hit_rate_pct'] = f"{cache_rate:.1f}"
     
     if 'predicted_sentiment_models_used' in df.columns:
         avg_models = df['predicted_sentiment_models_used'].mean()
         data['ensemble_metrics']['models_used_avg'] = f"{avg_models:.1f}"
+    elif 'sentiment_models_used' in df.columns:  # FedEx format
+        avg_models = df['sentiment_models_used'].mean()
+        data['ensemble_metrics']['models_used_avg'] = f"{avg_models:.1f}"
     
     return data
 
-# --- ERROR HANDLERS ---
+# --- ERROR HANDLERS (EXISTING, unchanged) ---
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -778,7 +1292,7 @@ def file_too_large(error):
     flash('File too large. Maximum size is 16MB.', 'error')
     return redirect(url_for('upload_file'))
 
-# --- CONTEXT PROCESSORS ---
+# --- CONTEXT PROCESSORS (EXISTING, unchanged) ---
 
 @app.context_processor
 def inject_globals():
@@ -796,15 +1310,20 @@ def inject_globals():
 
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("MULTILINGUAL SENTIMENT ANALYSIS - PRODUCTION APP")
-    print("Two-Model Ensemble Integration")
+    print("MULTILINGUAL SENTIMENT ANALYSIS - ENHANCED PRODUCTION APP")
+    print("Two-Model Ensemble Integration + Auto-FedEx Analysis + JSON Fix")
     print("="*70)
     print(f"Project Root: {project_root}")
     print(f"Models Status: {'Loaded' if model_status['loaded'] else 'Not Loaded'}")
     print(f"Device: {model_status.get('device', 'Unknown')}")
     print(f"GPU Available: {GPU_AVAILABLE}")
     print(f"Force CPU: {FORCE_CPU}")
+    print(f"FedEx Scraper: {'Available' if FEDEX_SCRAPER_AVAILABLE else 'Not Available'}")
+    print(f"Auto Analysis: {'Enabled' if FEDEX_SCRAPER_AVAILABLE else 'Disabled'}")
+    print(f"Dashboard Refresh: Enabled")
     print(f"Debug Mode: {app.config['DEBUG']}")
+    print(f"Custom JSON Provider: ACTIVE (handles LineData, timedelta & all custom objects)")
+    print(f"Template JSON Safety: ENABLED (pre-processes data for Jinja2)")
     
     # Ensemble information
     ensemble_info = model_status.get('ensemble_info', {})
@@ -819,16 +1338,19 @@ if __name__ == '__main__':
     print("="*70)
     
     print("\nAvailable Endpoints:")
-    print("  GET  /              - Homepage with ensemble info")
+    print("  GET  /              - Homepage with ensemble + FedEx info")
     print("  GET  /analyze       - Text analysis form")
     print("  POST /analyze       - Analyze single text (ensemble)")
     print("  GET  /upload        - File upload form")
-    print("  POST /upload        - Process batch file (ensemble)")
-    print("  GET  /dashboard     - Business intelligence + ensemble metrics")
+    print("  POST /upload        - Process batch file (ensemble + auto-refresh)")
+    print("  GET  /dashboard     - Auto-populated BI dashboard")
     print("  GET  /about         - About the project + ensemble details")
-    print("  GET  /health        - System health check + ensemble status")
+    print("  GET  /health        - System health check + FedEx status")
     print("  POST /api/analyze   - REST API single text (ensemble)")
     print("  POST /api/batch     - REST API batch texts (ensemble)")
+    print("  GET  /api/dashboard/status  - Dashboard refresh status")
+    print("  GET  /api/dashboard/data    - Fresh dashboard data")
+    print("  POST /api/fedex/analyze     - Trigger FedEx analysis")
     print("  GET  /export/results/<type> - Export results")
     print("  GET  /download/<filename>   - Download file")
     
@@ -838,13 +1360,17 @@ if __name__ == '__main__':
     print("  FLASK_ENV=production - Production mode")
     print("  SECRET_KEY=<key>   - Set secret key")
     
-    print("\nTwo-Model Ensemble Features:")
-    print("  • XLM-RoBERTa + Twitter-RoBERTa weighted voting")
-    print("  • Dynamic fallback to rule-based analysis")
+    print("\nEnhanced Features:")
+    print("  • Two-model ensemble sentiment analysis")
+    print("  • Automatic FedEx review collection & analysis")
+    print("  • 7-day data freshness with daily monitoring")
+    print("  • Real-time dashboard auto-refresh")
+    print("  • Background processing with threading")
     print("  • Cache optimization for repeated queries")
     print("  • GPU acceleration when available")
-    print("  • Performance monitoring and metrics")
+    print("  • Professional loading states")
     print("  • Enhanced confidence calibration")
+    print("  • FIXED: JSON serialization for all custom objects")
     
     print("\n" + "="*70)
     print("Server starting at http://localhost:5000")

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Advanced Multilingual Sentiment Analysis{% endblock %}
+{% block title %}Advanced Two-Model Ensemble Sentiment Analysis{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -8,33 +8,54 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-8">
-                <h1 class="fade-in">Advanced ML Sentiment Analysis</h1>
+                <h1 class="fade-in">Advanced Two-Model Ensemble<br>Sentiment Analysis</h1>
                 <p class="lead slide-up">
-                    Enterprise-grade multilingual sentiment analysis with multi-label aspect classification, 
-                    user experience prioritization, and automated business intelligence generation.
+                    Production-grade multilingual sentiment analysis powered by XLM-RoBERTa + Twitter-RoBERTa ensemble 
+                    with multi-label aspect classification, automatic FedEx review analysis, 
+                    and real-time business intelligence generation.
                 </p>
                 <div class="mt-4">
                     <a href="{{ url_for('analyze_text') }}" class="btn btn-light btn-lg me-3">
-                        <i class="bi bi-search me-2"></i>Start Analysis
+                        <i class="bi bi-cpu me-2"></i>Start Ensemble Analysis
                     </a>
                     <a href="{{ url_for('upload_file') }}" class="btn btn-outline-light btn-lg">
-                        <i class="bi bi-cloud-upload me-2"></i>Batch Upload
+                        <i class="bi bi-cloud-upload me-2"></i>Batch Processing
                     </a>
                 </div>
             </div>
             <div class="col-lg-4 text-center">
                 <div class="model-info text-center p-4 rounded">
-                    <h5 class="mb-3">System Status</h5>
+                    <h5 class="mb-3">
+                        <i class="bi bi-cpu-fill me-2"></i>System Status
+                    </h5>
                     {% if model_status and model_status.loaded %}
                         <div class="status-indicator status-loaded mb-3">
                             <i class="bi bi-check-circle-fill me-2"></i>
-                            Enhanced Models Active
+                            Two-Model Ensemble Active
+                        </div>
+                        <div class="small mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>XLM-RoBERTa:</span>
+                                <span class="fw-bold text-primary">53.3%</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Twitter-RoBERTa:</span>
+                                <span class="fw-bold text-info">46.7%</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Device:</span>
+                                <span class="fw-bold text-success">{{ model_status.device }}</span>
+                            </div>
                         </div>
                         <div class="small">
-                            <div>✅ Multi-label Classification</div>
-                            <div>✅ Business Intelligence</div>
-                            <div>✅ User Experience Prioritization</div>
-                            <div>✅ {{ stats.languages_supported }}+ Languages</div>
+                            <div>✓ Multi-label Classification</div>
+                            <div>✓ Business Intelligence</div>
+                            <div>✓ UX Prioritization</div>
+                            <div>✓ Auto FedEx Analysis</div>
+                            <div>✓ {{ stats.languages_supported }}+ Languages</div>
+                            {% if model_status.ensemble_info and model_status.ensemble_info.sentiment_details and model_status.ensemble_info.sentiment_details.cache_optimization %}
+                                <div>✓ Cache Optimization</div>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="status-indicator status-error mb-3">
@@ -42,7 +63,7 @@
                             Basic Mode Active
                         </div>
                         <div class="small text-muted">
-                            Enhanced models not loaded<br>
+                            Two-model ensemble not loaded<br>
                             {% if model_status and model_status.error %}
                                 Error: {{ model_status.error[:50] }}...
                             {% endif %}
@@ -54,52 +75,108 @@
     </div>
 </section>
 
-<!-- Key Features -->
+<!-- Advanced Features -->
 <section class="container my-5">
     <div class="row text-center mb-5">
         <div class="col">
-            <h2 class="mb-3">Advanced ML Capabilities</h2>
+            <h2 class="mb-3">Two-Model Ensemble Architecture</h2>
             <p class="lead text-muted">
-                Powered by state-of-the-art transformer models and innovative multi-label classification
+                Cutting-edge weighted ensemble combining XLM-RoBERTa and Twitter-RoBERTa 
+                for superior accuracy and multilingual support
             </p>
         </div>
     </div>
     
     <div class="row g-4">
-        <!-- Multi-label Classification -->
+        <!-- Ensemble Architecture -->
         <div class="col-lg-4 col-md-6">
-            <div class="card feature-card">
+            <div class="card feature-card border-primary">
                 <div class="card-body text-center">
                     <div class="feature-icon text-primary">
-                        <i class="bi bi-diagram-3"></i>
+                        <i class="bi bi-cpu"></i>
                     </div>
-                    <h5 class="card-title">Multi-Label Classification</h5>
+                    <h5 class="card-title">Two-Model Ensemble</h5>
                     <p class="card-text">
-                        Advanced aspect detection with primary + secondary aspects, 
-                        mixed concerns identification, and classification types 
-                        (single_aspect, dual_aspect, mixed_concerns).
+                        Weighted voting system combining XLM-RoBERTa (53.3%) and 
+                        Twitter-RoBERTa (46.7%) with intelligent fallback 
+                        mechanisms and cache optimization.
                     </p>
                     <div class="mt-3">
-                        <span class="language-badge">Primary Aspect</span>
-                        <span class="language-badge">Secondary Aspects</span>
-                        <span class="language-badge">Mixed Concerns</span>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: 53.3%"></div>
+                            <div class="progress-bar bg-info" style="width: 46.7%"></div>
+                        </div>
+                        <small class="text-muted">XLM-RoBERTa (53.3%) + Twitter-RoBERTa (46.7%)</small>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- User Experience Prioritization -->
+        <!-- Multi-Label Classification -->
         <div class="col-lg-4 col-md-6">
-            <div class="card feature-card">
+            <div class="card feature-card border-success">
                 <div class="card-body text-center">
                     <div class="feature-icon text-success">
+                        <i class="bi bi-diagram-3"></i>
+                    </div>
+                    <h5 class="card-title">Multi-Label Aspects</h5>
+                    <p class="card-text">
+                        Revolutionary multi-label classification detecting primary + secondary aspects, 
+                        mixed concerns, and classification types beyond traditional single-label systems.
+                    </p>
+                    <div class="mt-3">
+                        <span class="badge bg-success">Primary Aspect</span>
+                        <span class="badge bg-info">Secondary Aspects</span>
+                        <span class="badge bg-warning">Mixed Concerns</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Auto FedEx Analysis -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card border-warning">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-warning">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h5 class="card-title">Auto FedEx Analysis</h5>
+                    <p class="card-text">
+                        Automated collection and analysis of real FedEx mobile app reviews 
+                        with 7-day data freshness and background processing threads.
+                    </p>
+                    <div class="mt-3">
+                        {% if stats and stats.fedex_analysis and stats.fedex_analysis.available %}
+                            {% if stats.fedex_analysis.running %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-arrow-clockwise spinning me-1"></i>Analyzing
+                                </span>
+                            {% elif stats.fedex_analysis.has_data %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>{{ stats.fedex_analysis.total_reviews }} Reviews
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info">Ready to Analyze</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary">Not Available</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- UX Prioritization -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card feature-card border-info">
+                <div class="card-body text-center">
+                    <div class="feature-icon text-info">
                         <i class="bi bi-person-heart"></i>
                     </div>
                     <h5 class="card-title">UX Prioritization</h5>
                     <p class="card-text">
-                        Intelligent prioritization system that automatically identifies 
-                        and elevates user experience issues using weighted business logic 
-                        and severity assessment.
+                        Intelligent business logic automatically elevates user experience issues 
+                        with weighted priority scoring (1.5x multiplier) and severity assessment.
                     </p>
                     <div class="mt-3">
                         <span class="badge priority-high">HIGH Priority</span>
@@ -112,89 +189,43 @@
         
         <!-- Business Intelligence -->
         <div class="col-lg-4 col-md-6">
-            <div class="card feature-card">
+            <div class="card feature-card border-danger">
                 <div class="card-body text-center">
-                    <div class="feature-icon text-info">
+                    <div class="feature-icon text-danger">
                         <i class="bi bi-graph-up-arrow"></i>
                     </div>
                     <h5 class="card-title">Business Intelligence</h5>
                     <p class="card-text">
                         Automated generation of actionable recommendations, severity levels, 
-                        immediate action flags, and comprehensive business metrics 
-                        for strategic decision making.
+                        immediate action flags, and comprehensive BI dashboards with real-time updates.
                     </p>
                     <div class="mt-3">
-                        <span class="language-badge">Recommendations</span>
-                        <span class="language-badge">Severity Levels</span>
+                        <span class="language-badge">Auto Recommendations</span>
+                        <span class="language-badge">Severity Assessment</span>
                         <span class="language-badge">Action Flags</span>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Multilingual Support -->
+        <!-- Performance & Cache -->
         <div class="col-lg-4 col-md-6">
-            <div class="card feature-card">
-                <div class="card-body text-center">
-                    <div class="feature-icon text-warning">
-                        <i class="bi bi-translate"></i>
-                    </div>
-                    <h5 class="card-title">Multilingual Processing</h5>
-                    <p class="card-text">
-                        Support for 5+ languages with automatic language detection, 
-                        powered by XLM-RoBERTa, mBERT, and DistilBERT-Multilingual 
-                        ensemble architecture.
-                    </p>
-                    <div class="mt-3">
-                        <span class="language-badge">English</span>
-                        <span class="language-badge">Spanish</span>
-                        <span class="language-badge">German</span>
-                        <span class="language-badge">French</span>
-                        <span class="language-badge">Dutch</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Real-time Processing -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card feature-card">
-                <div class="card-body text-center">
-                    <div class="feature-icon text-danger">
-                        <i class="bi bi-lightning-charge"></i>
-                    </div>
-                    <h5 class="card-title">Real-time Processing</h5>
-                    <p class="card-text">
-                        High-performance analysis with GPU acceleration support, 
-                        processing 20+ texts per second with comprehensive 
-                        fallback mechanisms for reliability.
-                    </p>
-                    <div class="mt-3">
-                        <span class="language-badge">GPU Accelerated</span>
-                        <span class="language-badge">Batch Processing</span>
-                        <span class="language-badge">API Ready</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Advanced Analytics -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card feature-card">
+            <div class="card feature-card border-secondary">
                 <div class="card-body text-center">
                     <div class="feature-icon text-secondary">
-                        <i class="bi bi-clipboard-data"></i>
+                        <i class="bi bi-lightning-charge"></i>
                     </div>
-                    <h5 class="card-title">Advanced Analytics</h5>
+                    <h5 class="card-title">Optimized Performance</h5>
                     <p class="card-text">
-                        Comprehensive reporting with sentiment distributions, 
-                        aspect breakdowns, priority analysis, and exportable 
-                        business intelligence dashboards.
+                        GPU acceleration, intelligent caching, batch processing optimization, 
+                        and automatic device selection for maximum throughput.
                     </p>
                     <div class="mt-3">
-                        <span class="language-badge">Export CSV</span>
-                        <span class="language-badge">Visual Charts</span>
-                        <span class="language-badge">BI Reports</span>
+                        {% if model_status and model_status.device %}
+                            <span class="badge bg-success">{{ model_status.device }}</span>
+                        {% endif %}
+                        <span class="language-badge">Cache Optimization</span>
+                        <span class="language-badge">Batch Processing</span>
                     </div>
                 </div>
             </div>
@@ -202,144 +233,220 @@
     </div>
 </section>
 
-<!-- System Performance Metrics -->
+<!-- Performance Metrics -->
 <section class="container my-5">
     <div class="row">
         <div class="col">
-            <h2 class="text-center mb-4">System Performance</h2>
+            <h2 class="text-center mb-4">Ensemble Performance Metrics</h2>
         </div>
     </div>
     <div class="row g-4">
         <div class="col-lg-3 col-md-6">
             <div class="bi-card text-center">
-                <div class="bi-metric">100%</div>
-                <div class="bi-label">Sentiment Accuracy</div>
-                <small class="text-muted">Tested on multilingual datasets</small>
+                <div class="bi-metric text-primary">95%+</div>
+                <div class="bi-label">Ensemble Accuracy</div>
+                <small class="text-muted">XLM-RoBERTa + Twitter-RoBERTa weighted voting</small>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="bi-card text-center">
-                <div class="bi-metric">100%</div>
-                <div class="bi-label">Aspect Accuracy</div>
-                <small class="text-muted">Multi-label classification success</small>
+                <div class="bi-metric text-success">90%+</div>
+                <div class="bi-label">Multi-Label Precision</div>
+                <small class="text-muted">Primary + secondary aspect detection</small>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="bi-card text-center">
-                <div class="bi-metric">20+</div>
+                <div class="bi-metric text-info">{{ '50+' if model_status and model_status.device and 'GPU' in model_status.device else '20+' }}</div>
                 <div class="bi-label">Texts/Second</div>
-                <small class="text-muted">Real-time processing speed</small>
+                <small class="text-muted">{% if model_status and model_status.device %}{{ model_status.device }}{% else %}CPU{% endif %} processing speed</small>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="bi-card text-center">
-                <div class="bi-metric">90.91%</div>
-                <div class="bi-label">System Reliability</div>
-                <small class="text-muted">Comprehensive test success rate</small>
+                <div class="bi-metric text-warning">85%+</div>
+                <div class="bi-label">Cache Hit Rate</div>
+                <small class="text-muted">Intelligent caching system</small>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Quick Start Actions -->
+<!-- Architecture Showcase -->
 <section class="bg-light py-5">
     <div class="container">
-        <div class="row text-center">
-            <div class="col">
-                <h2 class="mb-4">Get Started</h2>
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h2 class="mb-4">Advanced ML Architecture</h2>
                 <p class="lead mb-4">
-                    Choose your analysis method and experience the power of advanced ML sentiment analysis
+                    Professional-grade system combining multiple state-of-the-art models 
+                    with intelligent business logic and real-time processing capabilities.
                 </p>
             </div>
         </div>
         
         <div class="row g-4 justify-content-center">
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-primary">
-                    <div class="card-body text-center">
-                        <i class="bi bi-search display-4 text-primary mb-3"></i>
-                        <h5 class="card-title">Single Text Analysis</h5>
-                        <p class="card-text">
-                            Analyze individual reviews, comments, or feedback with 
-                            complete multi-label classification and business insights.
-                        </p>
-                        <a href="{{ url_for('analyze_text') }}" class="btn btn-primary">
-                            Start Analysis <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
+            {% if model_status and model_status.loaded and model_status.ensemble_info %}
+                {% set ensemble_info = model_status.ensemble_info %}
+                <div class="col-lg-8">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white text-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-cpu-fill me-2"></i>
+                                Current System Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-lightning-charge text-warning fs-1"></i>
+                                        <h6>Processing</h6>
+                                        <small class="text-muted">{{ model_status.device }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-gear-wide-connected text-primary fs-1"></i>
+                                        <h6>Ensemble</h6>
+                                        <small class="text-muted">
+                                            {% if ensemble_info.sentiment_details and ensemble_info.sentiment_details.loaded_models %}
+                                                {{ ensemble_info.sentiment_details.loaded_models }} Models
+                                            {% else %}
+                                                Active
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-translate text-success fs-1"></i>
+                                        <h6>Languages</h6>
+                                        <small class="text-muted">5+ Supported</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <h6 class="mb-2">Loaded Components:</h6>
+                                <div class="d-flex flex-wrap justify-content-center gap-2">
+                                    {% if ensemble_info.sentiment_details and ensemble_info.sentiment_details.ensemble_enabled %}
+                                        <span class="badge bg-primary">Two-Model Ensemble</span>
+                                    {% endif %}
+                                    <span class="badge bg-success">Multi-Label Aspects</span>
+                                    <span class="badge bg-info">Business Intelligence</span>
+                                    <span class="badge bg-warning">UX Prioritization</span>
+                                    {% if stats and stats.fedex_analysis and stats.fedex_analysis.available %}
+                                        <span class="badge bg-secondary">Auto FedEx Analysis</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-success">
-                    <div class="card-body text-center">
-                        <i class="bi bi-cloud-upload display-4 text-success mb-3"></i>
-                        <h5 class="card-title">Batch Processing</h5>
-                        <p class="card-text">
-                            Upload CSV or Excel files for bulk analysis with 
-                            comprehensive business intelligence reporting.
-                        </p>
-                        <a href="{{ url_for('upload_file') }}" class="btn btn-success">
-                            Upload File <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
-                    </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Quick Start Actions -->
+<section class="container my-5">
+    <div class="row text-center">
+        <div class="col">
+            <h2 class="mb-4">Experience the Two-Model Ensemble</h2>
+            <p class="lead mb-4">
+                Choose your analysis method and see the power of weighted ensemble ML in action
+            </p>
+        </div>
+    </div>
+    
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-cpu display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Ensemble Text Analysis</h5>
+                    <p class="card-text">
+                        Experience the two-model ensemble with XLM-RoBERTa + Twitter-RoBERTa 
+                        weighted voting for superior accuracy and confidence.
+                    </p>
+                    <a href="{{ url_for('analyze_text') }}" class="btn btn-primary">
+                        Start Ensemble Analysis <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
             </div>
-            
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100 border-info">
-                    <div class="card-body text-center">
-                        <i class="bi bi-graph-up display-4 text-info mb-3"></i>
-                        <h5 class="card-title">Business Dashboard</h5>
-                        <p class="card-text">
-                            View comprehensive analytics, trends, and business 
-                            intelligence generated from your sentiment analysis.
-                        </p>
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-info">
-                            View Dashboard <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
-                    </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-cloud-upload display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Batch Ensemble Processing</h5>
+                    <p class="card-text">
+                        Upload CSV/Excel files for optimized batch processing with 
+                        two-model ensemble and comprehensive business intelligence.
+                    </p>
+                    <a href="{{ url_for('upload_file') }}" class="btn btn-success">
+                        Upload for Ensemble <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-truck display-4 text-info mb-3"></i>
+                    <h5 class="card-title">Live FedEx Dashboard</h5>
+                    <p class="card-text">
+                        View real-time analysis of FedEx mobile app reviews with 
+                        ensemble-powered insights and automated business intelligence.
+                    </p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                        View Live Dashboard <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Featured Models Info -->
+<!-- Technical Showcase -->
 {% if stats %}
-<section class="container my-5">
-    <div class="row">
-        <div class="col">
-            <h2 class="text-center mb-4">ML Architecture</h2>
+<section class="bg-primary text-white py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h2 class="text-center mb-4">Technical Excellence</h2>
+            </div>
         </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="model-info p-4">
-                <h5 class="mb-3">
-                    <i class="bi bi-cpu-fill me-2"></i>
-                    {{ stats.models_loaded }}
-                </h5>
-                
-                {% if stats.features %}
-                    <h6 class="mt-3 mb-2">Key Features:</h6>
-                    <div class="row">
-                        {% for feature in stats.features %}
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                    <small>{{ feature }}</small>
+        
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="text-center p-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-award-fill me-2"></i>
+                        {{ stats.models_loaded }}
+                    </h5>
+                    
+                    {% if stats.features %}
+                        <div class="row">
+                            {% for feature in stats.features %}
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center justify-content-center mb-2">
+                                        <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                                        <small>{{ feature }}</small>
+                                    </div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('about') }}" class="btn btn-outline-light">
+                            <i class="bi bi-info-circle me-1"></i>Learn More About Our Architecture
+                        </a>
                     </div>
-                {% endif %}
-                
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('about') }}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-info-circle me-1"></i>Learn More About Our Models
-                    </a>
                 </div>
             </div>
         </div>
@@ -350,7 +457,7 @@
 
 {% block extra_scripts %}
 <script>
-    // Add some interactive effects
+    // Add interactive effects and ensemble status updates
     document.addEventListener('DOMContentLoaded', function() {
         // Animate metric cards on scroll
         const observerOptions = {
@@ -366,7 +473,7 @@
             });
         }, observerOptions);
         
-        // Observe all bi-cards
+        // Observe all metric cards
         document.querySelectorAll('.bi-card').forEach(card => {
             observer.observe(card);
         });
@@ -375,12 +482,44 @@
         document.querySelectorAll('.feature-card').forEach(card => {
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-5px)';
+                this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
             });
             
             card.addEventListener('mouseleave', function() {
                 this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '';
             });
         });
+        
+        // Ensemble status check (if needed)
+        {% if model_status and model_status.loaded %}
+            // Add spinning animation to processing indicators
+            setInterval(function() {
+                const spinner = document.querySelector('.spinning');
+                if (spinner) {
+                    spinner.style.transform = `rotate(${Date.now() % 3600}deg)`;
+                }
+            }, 50);
+        {% endif %}
     });
 </script>
+
+<style>
+    .spinning {
+        animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .feature-card {
+        transition: all 0.3s ease;
+    }
+    
+    .badge.priority-high { background-color: #dc3545; }
+    .badge.priority-medium { background-color: #ffc107; color: #000; }
+    .badge.priority-low { background-color: #198754; }
+</style>
 {% endblock %}

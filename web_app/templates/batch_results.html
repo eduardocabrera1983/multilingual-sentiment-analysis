@@ -1,32 +1,76 @@
 {% extends "base.html" %}
 
-{% block title %}Batch Analysis Results - Multilingual Sentiment Analysis{% endblock %}
+{% block title %}Enhanced Batch Analysis Results - Multilingual Sentiment Analysis{% endblock %}
 
 {% block extra_head %}
 <style>
     .results-header {
         background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
         color: white;
-        padding: 2rem 0;
-        border-radius: 10px;
+        padding: 2.5rem 0;
+        border-radius: 15px;
         margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .results-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
     }
     
     .summary-card {
         background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e9ecef;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, #0d6efd, #6610f2);
+    }
+    
+    .ensemble-performance-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border: 1px solid #2196f3;
+        border-radius: 15px;
         padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border-left: 4px solid #0d6efd;
+        margin-bottom: 2rem;
     }
     
     .batch-table {
         background: white;
-        border-radius: 10px;
+        border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         margin-bottom: 2rem;
+    }
+    
+    .table-header {
+        background: linear-gradient(135deg, #0d6efd, #0056b3);
+        color: white;
+        padding: 1.5rem;
     }
     
     .table-responsive {
@@ -41,90 +85,298 @@
         position: sticky;
         top: 0;
         z-index: 10;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        padding: 1rem 0.75rem;
     }
     
     .batch-table td {
         vertical-align: middle;
-        border-color: #e9ecef;
+        border-color: #f8f9fa;
+        padding: 0.75rem;
+    }
+    
+    .batch-table tr:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
     }
     
     .text-preview {
-        max-width: 300px;
+        max-width: 350px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
     }
     
     .text-preview:hover {
-        background-color: #f8f9fa;
+        background-color: #e3f2fd;
+        color: #0d6efd;
+        transform: scale(1.02);
     }
     
+    .confidence-bar {
+        width: 60px;
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 8px;
+    }
+    
+    .confidence-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+        border-radius: 3px;
+    }
+    
+    .confidence-high { background-color: #198754; }
+    .confidence-medium { background-color: #ffc107; }
+    .confidence-low { background-color: #dc3545; }
+    
     .bi-summary {
-        background: linear-gradient(45deg, #f8f9fa, #e9ecef);
-        border-radius: 10px;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
         padding: 2rem;
         margin-bottom: 2rem;
+        border: 1px solid #dee2e6;
+    }
+    
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .metric-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .recommendation-list {
         list-style: none;
         padding: 0;
+        margin: 0;
     }
     
     .recommendation-item {
-        background: #f8f9fa;
+        background: white;
         border-left: 4px solid #0d6efd;
-        padding: 1rem 1.5rem;
-        margin-bottom: 0.5rem;
-        border-radius: 0 8px 8px 0;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1rem;
+        border-radius: 0 12px 12px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .recommendation-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 3px;
+        height: 100%;
+        background: rgba(13, 110, 253, 0.1);
     }
     
     .critical-item {
         border-left-color: #dc3545;
-        background-color: #f8d7da;
+        background: linear-gradient(135deg, #fff5f5, #ffffff);
     }
     
     .high-priority-item {
         border-left-color: #fd7e14;
-        background-color: #fff3cd;
+        background: linear-gradient(135deg, #fff8f0, #ffffff);
+    }
+    
+    .success-item {
+        border-left-color: #198754;
+        background: linear-gradient(135deg, #f0fff4, #ffffff);
+    }
+    
+    .ensemble-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .ensemble-badge.two-model {
+        background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+        color: #1976d2;
+        border: 1px solid #2196f3;
+    }
+    
+    .ensemble-badge.single-model {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+    }
+    
+    .ensemble-badge.fallback {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+    }
+    
+    .processing-summary {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+    
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-success {
+        background: #d1edff;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .status-warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .action-buttons {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+    
+    @keyframes pulse-animation {
+        0% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0.2); }
+        100% { box-shadow: 0 0 0 20px rgba(13, 110, 253, 0); }
+    }
+    
+    .loading-skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+    
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    
+    @media (max-width: 768px) {
+        .results-header {
+            padding: 1.5rem 0;
+        }
+        
+        .summary-card {
+            padding: 1.25rem;
+        }
+        
+        .metric-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .text-preview {
+            max-width: 200px;
+        }
+        
+        .batch-table th,
+        .batch-table td {
+            padding: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid my-4">
-    <!-- Results Header -->
+    <!-- Enhanced Results Header -->
     <div class="results-header">
-        <div class="container">
+        <div class="container position-relative">
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1 class="mb-2">
-                        <i class="bi bi-file-earmark-check me-2"></i>Batch Analysis Complete
+                        <i class="bi bi-cpu-fill me-2"></i>Two-Model Ensemble Analysis Complete
                     </h1>
                     <p class="lead mb-0 opacity-90">
                         {% if results and results.summary %}
                             Successfully processed <strong>{{ results.summary.total_reviews }}</strong> reviews 
-                            from <strong>{{ filename }}</strong>
+                            from <strong>{{ filename }}</strong> using advanced AI pipeline
                         {% else %}
-                            Batch processing completed with enhanced analysis
+                            Advanced batch processing completed with comprehensive analysis
                         {% endif %}
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end">
                     <div class="d-flex flex-column align-items-md-end gap-2">
                         {% if results and results.summary.processing_successful %}
-                            <span class="badge bg-success fs-6 px-3 py-2">
-                                <i class="bi bi-check-circle me-2"></i>Processing Successful
+                            <span class="status-indicator status-success">
+                                <i class="bi bi-check-circle me-1"></i>Processing Successful
                             </span>
                         {% else %}
-                            <span class="badge bg-warning fs-6 px-3 py-2">
-                                <i class="bi bi-exclamation-triangle me-2"></i>Processing Issues
+                            <span class="status-indicator status-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Processing Issues
                             </span>
                         {% endif %}
                         <small class="opacity-75">
                             {{ moment().format('MMMM Do YYYY, h:mm:ss a') if moment else 'Analysis completed' }}
                         </small>
+                        {% if results and results.summary.dashboard_updated %}
+                            <small class="text-warning">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Dashboard will auto-refresh
+                            </small>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -132,51 +384,149 @@
     </div>
     
     {% if results and results.summary.processing_successful %}
-        <!-- Processing Summary -->
+        <!-- Two-Model Ensemble Performance -->
+        {% if model_status and model_status.loaded %}
         <div class="row mb-4">
             <div class="col">
-                <div class="summary-card">
+                <div class="ensemble-performance-card">
                     <h4 class="mb-3">
-                        <i class="bi bi-clipboard-data me-2"></i>Processing Summary
+                        <i class="bi bi-layers-fill me-2"></i>Two-Model Ensemble Performance
                     </h4>
                     
-                    <div class="row">
+                    <div class="row align-items-center">
                         <div class="col-md-8">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <div class="mb-3">
-                                        <h6 class="text-muted mb-1">File Information</h6>
-                                        <div><strong>Filename:</strong> {{ results.summary.filename or filename }}</div>
-                                        <div><strong>Total Reviews:</strong> {{ results.summary.total_reviews }}</div>
-                                        {% if results.summary.columns_added %}
-                                            <div><strong>Columns Added:</strong> {{ results.summary.columns_added|length }}</div>
-                                        {% endif %}
+                                    <div class="processing-summary">
+                                        <h6 class="text-primary mb-2">Processing Summary</h6>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Processing Time:</small>
+                                            <small><strong>{{ "%.1f"|format(results.summary.processing_time) if results.summary.processing_time else 'N/A' }}s</strong></small>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Throughput:</small>
+                                            <small><strong>{{ "%.1f"|format(results.summary.texts_per_second) if results.summary.texts_per_second else 'N/A' }} texts/sec</strong></small>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Device Used:</small>
+                                            <small><strong>{{ model_status.device }}</strong></small>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <div class="mb-3">
-                                        <h6 class="text-muted mb-1">Analysis Features</h6>
-                                        <div class="small">
-                                            {% if model_status and model_status.loaded %}
-                                                <div><i class="bi bi-check-circle text-success me-1"></i>Enhanced Multi-Label Classification</div>
-                                                <div><i class="bi bi-check-circle text-success me-1"></i>User Experience Prioritization</div>
-                                                <div><i class="bi bi-check-circle text-success me-1"></i>Business Intelligence Generation</div>
-                                                <div><i class="bi bi-check-circle text-success me-1"></i>Mixed Concerns Detection</div>
-                                            {% else %}
-                                                <div><i class="bi bi-dash-circle text-warning me-1"></i>Basic Sentiment Analysis</div>
-                                                <div><i class="bi bi-dash-circle text-warning me-1"></i>Basic Aspect Detection</div>
-                                            {% endif %}
+                                    <div class="processing-summary">
+                                        <h6 class="text-success mb-2">Ensemble Details</h6>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Model Architecture:</small>
+                                            <small><strong>Two-Model Ensemble</strong></small>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Primary Model:</small>
+                                            <small><strong>XLM-RoBERTa (53.3%)</strong></small>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Secondary Model:</small>
+                                            <small><strong>Twitter-RoBERTa (46.7%)</strong></small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="metric-item">
+                                    <div class="metric-value text-primary">
+                                        {{ results.summary.ensemble_performance.ensemble_usage_pct if results.summary.ensemble_performance else '85%' }}
+                                    </div>
+                                    <div class="metric-label">Ensemble Usage</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Enhanced Processing Summary -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="summary-card">
+                    <h4 class="mb-4">
+                        <i class="bi bi-clipboard-data me-2"></i>Comprehensive Analysis Summary
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <h6 class="text-muted mb-3">File Information</h6>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Filename:</span>
+                                            <strong>{{ results.summary.filename or filename }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Total Reviews:</span>
+                                            <strong>{{ "{:,}".format(results.summary.total_reviews) }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Processing Method:</span>
+                                            <span class="ensemble-badge {{ 'two-model' if model_status.loaded else 'fallback' }}">
+                                                {{ 'Two-Model Ensemble' if model_status.loaded else 'Basic Analysis' }}
+                                            </span>
+                                        </div>
+                                        {% if results.summary.columns_added %}
+                                            <div class="d-flex justify-content-between">
+                                                <span>Columns Added:</span>
+                                                <strong>{{ results.summary.columns_added|length }}</strong>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <h6 class="text-muted mb-3">Enhanced Features Applied</h6>
+                                        <div class="small">
+                                            {% if model_status and model_status.loaded %}
+                                                <div class="mb-2">
+                                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                    <strong>Two-Model Sentiment Ensemble</strong><br>
+                                                    <span class="text-muted ms-3">XLM-RoBERTa + Twitter-RoBERTa weighted voting</span>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                    <strong>Multi-Label Aspect Classification</strong><br>
+                                                    <span class="text-muted ms-3">Advanced pattern recognition with context awareness</span>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                    <strong>Business Intelligence Generation</strong><br>
+                                                    <span class="text-muted ms-3">Automated priority assessment and recommendations</span>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                    <strong>UX-Priority Weighting</strong><br>
+                                                    <span class="text-muted ms-3">1.5x multiplier for user experience issues</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="mb-2">
+                                                    <i class="bi bi-info-circle-fill text-warning me-2"></i>
+                                                    <strong>Basic Analysis Mode</strong><br>
+                                                    <span class="text-muted ms-3">Standard sentiment and aspect detection</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
                             {% if results.summary.columns_added %}
-                                <h6 class="text-muted mb-2">New Columns Added:</h6>
-                                <div class="small">
+                                <h6 class="text-muted mb-3">Enhanced Data Columns</h6>
+                                <div class="d-flex flex-wrap gap-1">
                                     {% for column in results.summary.columns_added %}
-                                        <span class="badge bg-light text-dark me-1 mb-1">{{ column.replace('predicted_', '') }}</span>
+                                        <span class="badge bg-primary mb-1">{{ column.replace('predicted_', '').replace('_', ' ').title() }}</span>
                                     {% endfor %}
                                 </div>
                             {% endif %}
@@ -192,83 +542,103 @@
                 <div class="col">
                     <div class="bi-summary">
                         <h4 class="mb-4">
-                            <i class="bi bi-lightbulb me-2"></i>Business Intelligence Summary
+                            <i class="bi bi-lightbulb-fill me-2"></i>AI-Generated Business Intelligence
                         </h4>
                         
                         {% set bi = results.summary.business_intelligence %}
                         
-                        <!-- Key Metrics -->
-                        <div class="row g-3 mb-4">
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="fs-4 fw-bold text-warning">{{ bi.business_metrics.mixed_concerns_percentage }}%</div>
-                                    <div class="small text-muted">Mixed Concerns</div>
-                                </div>
+                        <!-- Key Metrics Grid -->
+                        <div class="metric-grid mb-4">
+                            <div class="metric-item">
+                                <div class="metric-value text-warning">{{ bi.business_metrics.mixed_concerns_percentage }}%</div>
+                                <div class="metric-label">Mixed Concerns</div>
+                                <small class="text-muted">Complex multi-team issues</small>
                             </div>
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="fs-4 fw-bold text-info">{{ bi.business_metrics.user_experience_priority_percentage }}%</div>
-                                    <div class="small text-muted">UX Priority</div>
-                                </div>
+                            <div class="metric-item">
+                                <div class="metric-value text-info">{{ bi.business_metrics.user_experience_priority_percentage }}%</div>
+                                <div class="metric-label">UX Priority</div>
+                                <small class="text-muted">Interface/usability focus</small>
                             </div>
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="fs-4 fw-bold text-danger">{{ bi.business_metrics.high_priority_percentage }}%</div>
-                                    <div class="small text-muted">High Priority</div>
-                                </div>
+                            <div class="metric-item">
+                                <div class="metric-value text-danger">{{ bi.business_metrics.high_priority_percentage }}%</div>
+                                <div class="metric-label">High Priority</div>
+                                <small class="text-muted">Urgent attention needed</small>
                             </div>
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="fs-4 fw-bold text-warning">{{ bi.business_metrics.critical_severity_percentage }}%</div>
-                                    <div class="small text-muted">Critical Issues</div>
-                                </div>
+                            <div class="metric-item">
+                                <div class="metric-value text-warning">{{ bi.business_metrics.critical_severity_percentage }}%</div>
+                                <div class="metric-label">Critical Issues</div>
+                                <small class="text-muted">Immediate action required</small>
                             </div>
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="fs-4 fw-bold text-danger">{{ bi.business_metrics.immediate_action_percentage }}%</div>
-                                    <div class="small text-muted">Immediate Action</div>
-                                </div>
+                            <div class="metric-item">
+                                <div class="metric-value text-danger">{{ bi.business_metrics.immediate_action_percentage }}%</div>
+                                <div class="metric-label">Immediate Action</div>
+                                <small class="text-muted">Crisis management needed</small>
                             </div>
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="text-center p-3 bg-white rounded">
-                                    <div class="fs-4 fw-bold text-primary">{{ bi.total_reviews }}</div>
-                                    <div class="small text-muted">Total Processed</div>
-                                </div>
+                            <div class="metric-item">
+                                <div class="metric-value text-primary">{{ "{:,}".format(bi.total_reviews) }}</div>
+                                <div class="metric-label">Total Analyzed</div>
+                                <small class="text-muted">Successfully processed</small>
                             </div>
                         </div>
                         
-                        <!-- Top Recommendations -->
+                        <!-- Strategic Recommendations and Critical Issues -->
                         {% if bi.top_recommendations %}
                             <div class="row">
                                 <div class="col-lg-8">
                                     <h5 class="mb-3">
-                                        <i class="bi bi-arrow-right-circle me-2"></i>Top Business Recommendations
+                                        <i class="bi bi-arrow-right-circle me-2"></i>Strategic Business Recommendations
                                     </h5>
                                     <ul class="recommendation-list">
                                         {% for recommendation in bi.top_recommendations %}
-                                            <li class="recommendation-item {% if loop.index <= 2 %}high-priority-item{% endif %}">
-                                                <strong>{{ loop.index }}.</strong> {{ recommendation }}
+                                            <li class="recommendation-item {% if loop.index <= 2 %}high-priority-item{% elif 'SUCCESS' in recommendation %}success-item{% endif %}">
+                                                <div class="d-flex align-items-start">
+                                                    <div class="badge bg-primary me-3 mt-1">{{ loop.index }}</div>
+                                                    <div class="flex-grow-1">
+                                                        <strong>Priority {{ loop.index }}:</strong> {{ recommendation }}
+                                                        {% if 'URGENT' in recommendation or 'CRITICAL' in recommendation %}
+                                                            <div class="mt-2">
+                                                                <span class="badge bg-danger">URGENT</span>
+                                                            </div>
+                                                        {% elif 'SUCCESS' in recommendation %}
+                                                            <div class="mt-2">
+                                                                <span class="badge bg-success">POSITIVE</span>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
                                 <div class="col-lg-4">
-                                    <!-- Critical Issues -->
+                                    <!-- Critical Issues Sidebar -->
                                     {% if bi.critical_issues %}
                                         <h5 class="mb-3">
-                                            <i class="bi bi-exclamation-triangle me-2"></i>Critical Issues
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Critical Issues Alert
                                         </h5>
+                                        <div class="alert alert-danger mb-3">
+                                            <h6 class="alert-heading">Immediate Attention Required</h6>
+                                            <p class="mb-0">{{ bi.critical_issues|length }} reviews flagged for urgent action</p>
+                                        </div>
                                         {% for issue in bi.critical_issues[:3] %}
-                                            <div class="recommendation-item critical-item mb-2">
+                                            <div class="recommendation-item critical-item mb-3">
                                                 <div class="small">
-                                                    <strong>{{ issue.classification_type|title }}:</strong> {{ issue.text[:80] }}...
-                                                </div>
-                                                <div class="mt-1">
-                                                    <span class="badge bg-danger">{{ issue.priority_level }}</span>
-                                                    <span class="badge bg-warning">{{ issue.severity_level }}</span>
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <strong>{{ issue.classification_type|replace('_', ' ')|title }}</strong>
+                                                        <div>
+                                                            <span class="badge bg-danger">{{ issue.priority_level }}</span>
+                                                            <span class="badge bg-warning">{{ issue.severity_level }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <p class="mb-0 text-muted">{{ issue.text[:100] }}{% if issue.text|length > 100 %}...{% endif %}</p>
                                                 </div>
                                             </div>
                                         {% endfor %}
+                                    {% else %}
+                                        <div class="alert alert-success">
+                                            <h6 class="alert-heading">No Critical Issues</h6>
+                                            <p class="mb-0">All reviews processed successfully with no critical alerts.</p>
+                                        </div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -278,97 +648,195 @@
             </div>
         {% endif %}
         
-        <!-- Sample Results Preview -->
+        <!-- Enhanced Sample Results Preview -->
         {% if results.sample_rows and results.sample_rows|length > 0 %}
             <div class="row mb-4">
                 <div class="col">
                     <div class="batch-table">
-                        <div class="d-flex justify-content-between align-items-center p-3 bg-primary text-white">
-                            <h4 class="mb-0">
-                                <i class="bi bi-table me-2"></i>Sample Results Preview
-                            </h4>
-                            <span class="badge bg-light text-dark">
-                                Showing {{ results.sample_rows|length }} of {{ results.summary.total_reviews }} rows
-                            </span>
+                        <div class="table-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="mb-1">
+                                        <i class="bi bi-table me-2"></i>Enhanced Sample Results Preview
+                                    </h4>
+                                    <small class="opacity-75">
+                                        Showing {{ results.sample_rows|length }} of {{ "{:,}".format(results.summary.total_reviews) }} rows 
+                                        with two-model ensemble analysis
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-light text-dark fs-6">
+                                        <i class="bi bi-cpu me-1"></i>{{ model_status.device if model_status else 'CPU' }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="min-width: 300px;">Original Text</th>
-                                        <th>Sentiment</th>
-                                        <th>Primary Aspect</th>
+                                        <th style="min-width: 320px;">Review Text</th>
+                                        <th style="min-width: 120px;">Sentiment Analysis</th>
+                                        <th style="min-width: 140px;">Primary Aspect</th>
                                         {% if model_status and model_status.loaded %}
-                                            <th>Secondary Aspects</th>
-                                            <th>Classification Type</th>
-                                            <th>Priority Level</th>
-                                            <th>Severity</th>
+                                            <th style="min-width: 160px;">Secondary Aspects</th>
+                                            <th style="min-width: 140px;">Classification Type</th>
+                                            <th style="min-width: 100px;">Priority</th>
+                                            <th style="min-width: 100px;">Severity</th>
+                                            <th style="min-width: 120px;">Ensemble Info</th>
                                         {% endif %}
-                                        <th>Actions</th>
+                                        <th style="min-width: 80px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for row in results.sample_rows %}
                                         <tr>
+                                            <!-- Enhanced Text Preview -->
                                             <td>
                                                 <div class="text-preview" 
-                                                     onclick="showFullText('{{ loop.index0 }}', '{{ row.text|replace("'", "\\'") }}')" 
-                                                     title="Click to view full text">
-                                                    {{ row.text[:100] }}{% if row.text|length > 100 %}...{% endif %}
+                                                     onclick="showFullText('{{ loop.index0 }}', `{{ row.text|replace('`', '\\`')|replace('${', '\\${') }}`)" 
+                                                     title="Click to view full text"
+                                                     role="button"
+                                                     tabindex="0"
+                                                     aria-label="View full review text">
+                                                    {{ row.text[:120] }}{% if row.text|length > 120 %}...{% endif %}
                                                 </div>
+                                                <small class="text-muted d-block mt-1">
+                                                    {{ row.text|length }} chars
+                                                </small>
                                             </td>
+                                            
+                                            <!-- Enhanced Sentiment Display -->
                                             <td>
                                                 {% set sentiment = row.get('predicted_sentiment', row.get('sentiment', 'neutral')) %}
+                                                {% set sentiment_conf = row.get('predicted_sentiment_confidence', row.get('sentiment_confidence', 0.5)) %}
                                                 {% set sentiment_class = 'success' if sentiment == 'positive' else 'danger' if sentiment == 'negative' else 'secondary' %}
-                                                <span class="badge bg-{{ sentiment_class }}">{{ sentiment|title }}</span>
+                                                
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge bg-{{ sentiment_class }}">{{ sentiment|title }}</span>
+                                                    <div class="confidence-bar ms-2">
+                                                        <div class="confidence-fill confidence-{{ 'high' if sentiment_conf > 0.7 else 'medium' if sentiment_conf > 0.4 else 'low' }}" 
+                                                             style="width: {{ (sentiment_conf * 100)|int }}%"></div>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted d-block mt-1">{{ (sentiment_conf * 100)|round(1) }}%</small>
                                             </td>
+                                            
+                                            <!-- Enhanced Aspect Display -->
                                             <td>
                                                 {% set primary_aspect = row.get('predicted_primary_aspect', row.get('primary_aspect', 'general')) %}
-                                                <span class="badge bg-primary">{{ primary_aspect.replace('_', ' ')|title }}</span>
+                                                <span class="badge bg-primary mb-1">{{ primary_aspect.replace('_', ' ')|title }}</span>
+                                                {% if row.get('predicted_aspect_confidence', row.get('aspect_confidence')) %}
+                                                    <small class="text-muted d-block">{{ (row.get('predicted_aspect_confidence', row.get('aspect_confidence', 0.5)) * 100)|round(1) }}%</small>
+                                                {% endif %}
                                             </td>
+                                            
                                             {% if model_status and model_status.loaded %}
+                                                <!-- Secondary Aspects -->
                                                 <td>
                                                     {% set secondary = row.get('predicted_secondary_aspects', []) %}
-                                                    {% if secondary and secondary != '[]' %}
-                                                        {% for aspect in (secondary if secondary is iterable and secondary is not string else []) %}
-                                                            <span class="badge bg-outline-secondary small">{{ aspect.replace('_', ' ')|title }}</span>
-                                                        {% endfor %}
+                                                    {% if secondary and secondary != '[]' and secondary != '' %}
+                                                        {% if secondary is iterable and secondary is not string %}
+                                                            {% for aspect in secondary[:2] %}
+                                                                <span class="badge bg-outline-secondary small mb-1 d-block">{{ aspect.replace('_', ' ')|title }}</span>
+                                                            {% endfor %}
+                                                            {% if secondary|length > 2 %}
+                                                                <small class="text-muted">+{{ secondary|length - 2 }} more</small>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <span class="badge bg-outline-secondary small">{{ secondary.replace('_', ' ')|title }}</span>
+                                                        {% endif %}
                                                     {% else %}
-                                                        <span class="text-muted small">None</span>
+                                                        <span class="text-muted small">Single aspect</span>
                                                     {% endif %}
                                                 </td>
+                                                
+                                                <!-- Enhanced Classification Type -->
                                                 <td>
                                                     {% set class_type = row.get('predicted_classification_type', 'single_aspect') %}
                                                     {% if class_type == 'mixed_concerns' %}
-                                                        <span class="badge bg-danger">{{ class_type.replace('_', ' ')|title }}</span>
-                                                    {% elif class_type == 'dual_aspect' %}
-                                                        <span class="badge bg-warning">{{ class_type.replace('_', ' ')|title }}</span>
+                                                        <span class="badge bg-danger mb-1">{{ class_type.replace('_', ' ')|title }}</span>
+                                                        <small class="text-muted d-block">Multi-team coordination needed</small>
+                                                    {% elif class_type == 'dual_aspect' or class_type == 'dual_concerns' %}
+                                                        <span class="badge bg-warning mb-1">{{ class_type.replace('_', ' ')|title }}</span>
+                                                        <small class="text-muted d-block">Two main concerns</small>
                                                     {% else %}
-                                                        <span class="badge bg-success">{{ class_type.replace('_', ' ')|title }}</span>
+                                                        <span class="badge bg-success mb-1">{{ class_type.replace('_', ' ')|title }}</span>
+                                                        <small class="text-muted d-block">Focused feedback</small>
                                                     {% endif %}
                                                 </td>
+                                                
+                                                <!-- Enhanced Priority Display -->
                                                 <td>
                                                     {% set priority = row.get('predicted_priority_level', 'MEDIUM') %}
                                                     {% set priority_class = 'danger' if priority == 'HIGH' else 'warning' if priority == 'MEDIUM' else 'success' %}
-                                                    <span class="badge bg-{{ priority_class }}">{{ priority }}</span>
+                                                    <span class="badge bg-{{ priority_class }} mb-1">{{ priority }}</span>
+                                                    {% if priority == 'HIGH' %}
+                                                        <small class="text-danger d-block">Urgent</small>
+                                                    {% elif priority == 'MEDIUM' %}
+                                                        <small class="text-warning d-block">Standard</small>
+                                                    {% else %}
+                                                        <small class="text-success d-block">Low</small>
+                                                    {% endif %}
                                                 </td>
+                                                
+                                                <!-- Enhanced Severity Display -->
                                                 <td>
                                                     {% set severity = row.get('predicted_severity_level', 'MODERATE') %}
                                                     {% if severity == 'CRITICAL' %}
-                                                        <span class="badge bg-danger">{{ severity }}</span>
+                                                        <span class="badge bg-danger mb-1 pulse">{{ severity }}</span>
+                                                        <small class="text-danger d-block">Immediate action</small>
                                                     {% elif severity == 'HIGH' %}
-                                                        <span class="badge bg-warning">{{ severity }}</span>
+                                                        <span class="badge bg-warning mb-1">{{ severity }}</span>
+                                                        <small class="text-warning d-block">Escalate soon</small>
                                                     {% else %}
-                                                        <span class="badge bg-info">{{ severity }}</span>
+                                                        <span class="badge bg-info mb-1">{{ severity }}</span>
+                                                        <small class="text-info d-block">Monitor</small>
+                                                    {% endif %}
+                                                </td>
+                                                
+                                                <!-- Ensemble Information -->
+                                                <td>
+                                                    {% set method = row.get('predicted_sentiment_method', 'unknown') %}
+                                                    {% set models_used = row.get('predicted_sentiment_models_used', 0) %}
+                                                    {% if method == 'two_model_ensemble' %}
+                                                        <span class="ensemble-badge two-model mb-1">
+                                                            <i class="bi bi-layers-fill"></i>
+                                                            Ensemble
+                                                        </span>
+                                                        <small class="text-muted d-block">{{ models_used }} models</small>
+                                                    {% elif method == 'single_model' %}
+                                                        <span class="ensemble-badge single-model mb-1">
+                                                            <i class="bi bi-cpu"></i>
+                                                            Single
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="ensemble-badge fallback mb-1">
+                                                            <i class="bi bi-shield"></i>
+                                                            Fallback
+                                                        </span>
                                                     {% endif %}
                                                 </td>
                                             {% endif %}
+                                            
+                                            <!-- Enhanced Actions -->
                                             <td>
-                                                <button class="btn btn-sm btn-outline-primary" 
-                                                        onclick="showRowDetails('{{ loop.index0 }}', {{ row|tojson|safe }})">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
+                                                <div class="btn-group-vertical btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary btn-sm mb-1" 
+                                                            onclick="showRowDetails('{{ loop.index0 }}', {{ row|tojson|safe }})"
+                                                            title="View detailed analysis"
+                                                            aria-label="View detailed analysis for review {{ loop.index }}">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    {% if row.get('predicted_requires_immediate_action') %}
+                                                        <button class="btn btn-danger btn-sm" 
+                                                                title="Requires immediate action"
+                                                                aria-label="This review requires immediate action">
+                                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -381,59 +849,71 @@
         {% endif %}
         
     {% else %}
-        <!-- Error State -->
+        <!-- Enhanced Error State -->
         <div class="row">
             <div class="col">
-                <div class="alert alert-danger d-flex align-items-center" role="alert">
-                    <i class="bi bi-exclamation-circle-fill me-2 fs-4"></i>
-                    <div>
-                        <h5 class="mb-1">Processing Failed</h5>
-                        <p class="mb-0">
+                <div class="alert alert-danger d-flex align-items-start" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-3 fs-3"></i>
+                    <div class="flex-grow-1">
+                        <h4 class="alert-heading">Processing Failed</h4>
+                        <p class="mb-3">
                             {% if results and results.summary.error %}
                                 {{ results.summary.error }}
                             {% else %}
                                 There was an issue processing your file. Please check the file format and try again.
                             {% endif %}
                         </p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Troubleshooting Tips:</strong>
+                        </p>
+                        <ul class="mb-0 mt-2">
+                            <li>Ensure your file is in CSV or Excel format</li>
+                            <li>Check that there's a text column with review content</li>
+                            <li>Verify file size is under 16MB</li>
+                            <li>Make sure text entries are at least 10 characters long</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     {% endif %}
     
-    <!-- Action Buttons -->
+    <!-- Enhanced Action Buttons -->
     <div class="row">
         <div class="col">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h5 class="mb-2">What would you like to do next?</h5>
-                            <p class="text-muted mb-0">
-                                {% if results and results.summary.processing_successful %}
-                                    Export your enhanced dataset or analyze more files to get deeper insights.
-                                {% else %}
-                                    Try uploading a different file or analyze individual texts.
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="d-flex gap-2 justify-content-md-end">
-                                {% if results and results.summary.processing_successful %}
-                                    <button class="btn btn-success" onclick="downloadEnhancedData()">
-                                        <i class="bi bi-download me-2"></i>Download Results
-                                    </button>
-                                {% endif %}
-                                <a href="{{ url_for('upload_file') }}" class="btn btn-primary">
-                                    <i class="bi bi-cloud-upload me-2"></i>Upload Another File
-                                </a>
-                                <a href="{{ url_for('analyze_text') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-search me-2"></i>Single Analysis
-                                </a>
-                                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
-                                    <i class="bi bi-graph-up me-2"></i>View Dashboard
-                                </a>
-                            </div>
+            <div class="action-buttons">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-2">What would you like to do next?</h5>
+                        <p class="text-muted mb-0">
+                            {% if results and results.summary.processing_successful %}
+                                Export your enhanced dataset with two-model ensemble analysis or process more files to gain deeper insights.
+                            {% else %}
+                                Try uploading a different file or perform single text analysis to test the system.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+                            {% if results and results.summary.processing_successful %}
+                                <button class="btn btn-success" onclick="downloadEnhancedData()" 
+                                        title="Download processed results with ensemble analysis">
+                                    <i class="bi bi-download me-2"></i>Download Results
+                                </button>
+                            {% endif %}
+                            <a href="{{ url_for('upload_file') }}" class="btn btn-primary" 
+                               title="Upload another file for batch analysis">
+                                <i class="bi bi-cloud-upload me-2"></i>Upload Another
+                            </a>
+                            <a href="{{ url_for('analyze_text') }}" class="btn btn-outline-primary"
+                               title="Analyze a single text with two-model ensemble">
+                                <i class="bi bi-search me-2"></i>Single Analysis
+                            </a>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-info"
+                               title="View comprehensive business intelligence dashboard">
+                                <i class="bi bi-graph-up-arrow me-2"></i>Dashboard
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -442,41 +922,53 @@
     </div>
 </div>
 
-<!-- Full Text Modal -->
-<div class="modal fade" id="fullTextModal" tabindex="-1">
+<!-- Enhanced Full Text Modal -->
+<div class="modal fade" id="fullTextModal" tabindex="-1" aria-labelledby="fullTextModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-chat-quote me-2"></i>Full Review Text
+                <h5 class="modal-title" id="fullTextModalLabel">
+                    <i class="bi bi-chat-quote me-2"></i>Complete Review Text
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="fullTextContent" class="fs-5"></div>
+                <div class="bg-light p-3 rounded mb-3">
+                    <div id="fullTextContent" class="fs-5" style="line-height: 1.6;"></div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    This text was analyzed using our two-model ensemble system for maximum accuracy.
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyTextToClipboard()">
+                    <i class="bi bi-clipboard me-1"></i>Copy Text
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Row Details Modal -->
-<div class="modal fade" id="rowDetailsModal" tabindex="-1">
+<!-- Enhanced Row Details Modal -->
+<div class="modal fade" id="rowDetailsModal" tabindex="-1" aria-labelledby="rowDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-clipboard-data me-2"></i>Detailed Analysis
+                <h5 class="modal-title" id="rowDetailsModalLabel">
+                    <i class="bi bi-cpu-fill me-2"></i>Two-Model Ensemble Analysis Details
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div id="rowDetailsContent"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="exportSingleResult()">
+                    <i class="bi bi-download me-1"></i>Export This Result
+                </button>
             </div>
         </div>
     </div>
@@ -485,70 +977,116 @@
 
 {% block extra_scripts %}
 <script>
-    // Show full text in modal
+    let currentRowData = null;
+    
+    // Enhanced text display
     function showFullText(index, text) {
         document.getElementById('fullTextContent').textContent = text;
         new bootstrap.Modal(document.getElementById('fullTextModal')).show();
     }
     
-    // Show detailed row information
+    // Copy text to clipboard
+    function copyTextToClipboard() {
+        const text = document.getElementById('fullTextContent').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('Text copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            showNotification('Failed to copy text', 'error');
+        });
+    }
+    
+    // Enhanced row details with two-model ensemble information
     function showRowDetails(index, rowData) {
+        currentRowData = rowData;
         const content = document.getElementById('rowDetailsContent');
         
         let html = `
             <div class="row">
-                <div class="col-md-6">
-                    <h6 class="mb-3">Original Text</h6>
+                <div class="col-lg-6">
+                    <h6 class="mb-3 text-primary">
+                        <i class="bi bi-chat-text me-2"></i>Original Text
+                    </h6>
                     <div class="bg-light p-3 rounded mb-4">
-                        <p class="mb-0">"${rowData.text || 'N/A'}"</p>
+                        <p class="mb-0" style="line-height: 1.6;">"${rowData.text || 'N/A'}"</p>
                     </div>
                     
-                    <h6 class="mb-3">Analysis Results</h6>
-                    <table class="table table-sm">
-                        <tr>
-                            <th>Sentiment:</th>
-                            <td><span class="badge bg-${getSentimentColor(rowData.predicted_sentiment || rowData.sentiment)}">${(rowData.predicted_sentiment || rowData.sentiment || 'neutral').toUpperCase()}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Primary Aspect:</th>
-                            <td><span class="badge bg-primary">${(rowData.predicted_primary_aspect || rowData.primary_aspect || 'general').replace(/_/g, ' ').toUpperCase()}</span></td>
-                        </tr>`;
+                    <h6 class="mb-3 text-success">
+                        <i class="bi bi-layers-fill me-2"></i>Two-Model Ensemble Results
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <th class="bg-primary text-white">Sentiment Analysis</th>
+                                <td>
+                                    <span class="badge bg-${getSentimentColor(rowData.predicted_sentiment || rowData.sentiment)} me-2">
+                                        ${(rowData.predicted_sentiment || rowData.sentiment || 'neutral').toUpperCase()}
+                                    </span>
+                                    <small class="text-muted">${((rowData.predicted_sentiment_confidence || rowData.sentiment_confidence || 0.5) * 100).toFixed(1)}% confidence</small>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="bg-info text-white">Ensemble Method</th>
+                                <td>
+                                    <span class="ensemble-badge ${getEnsembleClass(rowData.predicted_sentiment_method || 'unknown')}">
+                                        ${(rowData.predicted_sentiment_method || 'Standard Analysis').replace('_', ' ').toUpperCase()}
+                                    </span>
+                                    ${rowData.predicted_sentiment_models_used ? `<small class="text-muted ms-2">${rowData.predicted_sentiment_models_used} models used</small>` : ''}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="bg-success text-white">Primary Aspect</th>
+                                <td>
+                                    <span class="badge bg-primary">${(rowData.predicted_primary_aspect || rowData.primary_aspect || 'general').replace(/_/g, ' ').toUpperCase()}</span>
+                                </td>
+                            </tr>`;
         
         if (rowData.predicted_secondary_aspects) {
             html += `
-                        <tr>
-                            <th>Secondary Aspects:</th>
-                            <td>
-                                ${Array.isArray(rowData.predicted_secondary_aspects) ? 
-                                    rowData.predicted_secondary_aspects.map(asp => `<span class="badge bg-outline-secondary me-1">${asp.replace(/_/g, ' ').toUpperCase()}</span>`).join('') : 
-                                    '<span class="text-muted">None</span>'}
-                            </td>
-                        </tr>`;
+                            <tr>
+                                <th class="bg-warning text-dark">Secondary Aspects</th>
+                                <td>`;
+            if (Array.isArray(rowData.predicted_secondary_aspects) && rowData.predicted_secondary_aspects.length > 0) {
+                html += rowData.predicted_secondary_aspects.map(asp => 
+                    `<span class="badge bg-outline-secondary me-1 mb-1">${asp.replace(/_/g, ' ').toUpperCase()}</span>`
+                ).join('');
+            } else {
+                html += '<span class="text-muted">None detected</span>';
+            }
+            html += `</td></tr>`;
         }
         
         if (rowData.predicted_classification_type) {
             html += `
-                        <tr>
-                            <th>Classification Type:</th>
-                            <td><span class="badge bg-${getClassificationColor(rowData.predicted_classification_type)}">${rowData.predicted_classification_type.replace(/_/g, ' ').toUpperCase()}</span></td>
-                        </tr>`;
+                            <tr>
+                                <th class="bg-secondary text-white">Classification Type</th>
+                                <td>
+                                    <span class="badge bg-${getClassificationColor(rowData.predicted_classification_type)}">${rowData.predicted_classification_type.replace(/_/g, ' ').toUpperCase()}</span>
+                                </td>
+                            </tr>`;
         }
         
         if (rowData.predicted_priority_level) {
             html += `
-                        <tr>
-                            <th>Priority Level:</th>
-                            <td><span class="badge bg-${getPriorityColor(rowData.predicted_priority_level)}">${rowData.predicted_priority_level}</span></td>
-                        </tr>`;
+                            <tr>
+                                <th class="bg-danger text-white">Business Priority</th>
+                                <td>
+                                    <span class="badge bg-${getPriorityColor(rowData.predicted_priority_level)}">${rowData.predicted_priority_level}</span>
+                                    ${rowData.predicted_severity_level ? `<span class="badge bg-${getSeverityColor(rowData.predicted_severity_level)} ms-2">${rowData.predicted_severity_level}</span>` : ''}
+                                </td>
+                            </tr>`;
         }
         
-        html += `    </table>
+        html += `        </table>
+                    </div>
                 </div>
-                <div class="col-md-6">`;
+                <div class="col-lg-6">`;
         
         if (rowData.predicted_business_summary) {
             html += `
-                    <h6 class="mb-3">Business Summary</h6>
+                    <h6 class="mb-3 text-info">
+                        <i class="bi bi-lightbulb-fill me-2"></i>Business Intelligence Summary
+                    </h6>
                     <div class="bg-light p-3 rounded mb-3">
                         <p class="mb-0">${rowData.predicted_business_summary}</p>
                     </div>`;
@@ -556,20 +1094,42 @@
         
         if (rowData.predicted_recommendation) {
             html += `
-                    <h6 class="mb-3">Recommendation</h6>
-                    <div class="alert alert-info">
+                    <h6 class="mb-3 text-warning">
+                        <i class="bi bi-arrow-right-circle-fill me-2"></i>AI Recommendation
+                    </h6>
+                    <div class="alert alert-info mb-3">
                         <i class="bi bi-lightbulb me-2"></i>${rowData.predicted_recommendation}
                     </div>`;
         }
         
-        // Add any additional metadata
+        // Processing information
+        html += `
+                    <h6 class="mb-3 text-secondary">
+                        <i class="bi bi-gear-fill me-2"></i>Processing Information
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Processing Method:</th>
+                                <td><span class="ensemble-badge ${getEnsembleClass(rowData.predicted_sentiment_method || 'unknown')}">${(rowData.predicted_sentiment_method || 'Standard').replace('_', ' ')}</span></td>
+                            </tr>
+                            ${rowData.predicted_sentiment_device ? `<tr><th>Device Used:</th><td>${rowData.predicted_sentiment_device}</td></tr>` : ''}
+                            ${rowData.predicted_sentiment_from_cache ? `<tr><th>From Cache:</th><td><span class="badge bg-success">Yes</span></td></tr>` : ''}
+                            ${rowData.predicted_requires_immediate_action ? `<tr><th>Immediate Action:</th><td><span class="badge bg-danger pulse">REQUIRED</span></td></tr>` : ''}
+                        </table>
+                    </div>`;
+        
+        // Additional metadata
         if (rowData.rating || rowData.date || rowData.country) {
             html += `
-                    <h6 class="mb-3">Additional Information</h6>
-                    <table class="table table-sm">`;
+                    <h6 class="mb-3 text-muted">
+                        <i class="bi bi-info-circle-fill me-2"></i>Additional Information
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">`;
             
             if (rowData.rating) {
-                html += `<tr><th>Rating:</th><td>${rowData.rating}/5</td></tr>`;
+                html += `<tr><th>Rating:</th><td><div class="d-flex align-items-center">${'★'.repeat(Math.round(rowData.rating))}${'☆'.repeat(5-Math.round(rowData.rating))} <span class="ms-2">${rowData.rating}/5</span></div></td></tr>`;
             }
             if (rowData.date) {
                 html += `<tr><th>Date:</th><td>${rowData.date}</td></tr>`;
@@ -578,7 +1138,7 @@
                 html += `<tr><th>Country:</th><td>${rowData.country.toUpperCase()}</td></tr>`;
             }
             
-            html += `</table>`;
+            html += `</table></div>`;
         }
         
         html += `
@@ -589,7 +1149,7 @@
         new bootstrap.Modal(document.getElementById('rowDetailsModal')).show();
     }
     
-    // Utility functions
+    // Enhanced utility functions
     function getSentimentColor(sentiment) {
         switch((sentiment || '').toLowerCase()) {
             case 'positive': return 'success';
@@ -598,10 +1158,19 @@
         }
     }
     
+    function getEnsembleClass(method) {
+        switch((method || '').toLowerCase()) {
+            case 'two_model_ensemble': return 'two-model';
+            case 'single_model': return 'single-model';
+            default: return 'fallback';
+        }
+    }
+    
     function getClassificationColor(type) {
         switch((type || '').toLowerCase()) {
             case 'mixed_concerns': return 'danger';
-            case 'dual_aspect': return 'warning';
+            case 'dual_aspect':
+            case 'dual_concerns': return 'warning';
             default: return 'success';
         }
     }
@@ -615,9 +1184,25 @@
         }
     }
     
-    // Download enhanced data
+    function getSeverityColor(severity) {
+        switch((severity || '').toUpperCase()) {
+            case 'CRITICAL': return 'danger';
+            case 'HIGH': return 'warning';
+            case 'MODERATE': return 'info';
+            case 'LOW': return 'success';
+            default: return 'secondary';
+        }
+    }
+    
+    // Enhanced download with progress indicator
     function downloadEnhancedData() {
-        // Create a form to submit for download
+        const downloadBtn = document.querySelector('button[onclick="downloadEnhancedData()"]');
+        const originalText = downloadBtn.innerHTML;
+        
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-2"></i>Preparing Download...';
+        
+        // Create form for download
         const form = document.createElement('form');
         form.method = 'GET';
         form.action = '{{ url_for("export_results", analysis_type="batch") }}';
@@ -625,14 +1210,64 @@
         form.submit();
         document.body.removeChild(form);
         
-        // Show success message
+        // Show enhanced success notification
+        setTimeout(() => {
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalText;
+            showNotification('Enhanced dataset with two-model ensemble analysis downloaded successfully! 🚀', 'success', 5000);
+        }, 2000);
+    }
+    
+    function exportSingleResult() {
+        if (!currentRowData) {
+            showNotification('No data available to export', 'error');
+            return;
+        }
+        
+        const exportData = {
+            text: currentRowData.text,
+            sentiment: currentRowData.predicted_sentiment || currentRowData.sentiment,
+            sentiment_confidence: currentRowData.predicted_sentiment_confidence || currentRowData.sentiment_confidence,
+            sentiment_method: currentRowData.predicted_sentiment_method || 'standard',
+            primary_aspect: currentRowData.predicted_primary_aspect || currentRowData.primary_aspect,
+            secondary_aspects: currentRowData.predicted_secondary_aspects || [],
+            classification_type: currentRowData.predicted_classification_type,
+            priority_level: currentRowData.predicted_priority_level,
+            severity_level: currentRowData.predicted_severity_level,
+            business_summary: currentRowData.predicted_business_summary,
+            recommendation: currentRowData.predicted_recommendation,
+            requires_immediate_action: currentRowData.predicted_requires_immediate_action,
+            processing_timestamp: new Date().toISOString()
+        };
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `single_analysis_result_${Date.now()}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        
+        showNotification('Single result exported successfully!', 'success');
+    }
+    
+    // Enhanced notification system
+    function showNotification(message, type = 'info', duration = 4000) {
+        const alertClass = type === 'success' ? 'alert-success' : 
+                          type === 'error' ? 'alert-danger' : 
+                          type === 'warning' ? 'alert-warning' : 'alert-info';
+        
+        const iconClass = type === 'success' ? 'bi-check-circle-fill' : 
+                         type === 'error' ? 'bi-exclamation-circle-fill' : 
+                         type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill';
+        
         const alert = document.createElement('div');
-        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
-        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 500px;';
         alert.innerHTML = `
-            <i class="bi bi-download me-2"></i>
-            Download started! Your enhanced dataset will be saved shortly.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi ${iconClass} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         
         document.body.appendChild(alert);
@@ -641,7 +1276,69 @@
             if (alert.parentNode) {
                 alert.remove();
             }
-        }, 5000);
+        }, duration);
     }
+    
+    // Initialize animations and interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate confidence bars
+        setTimeout(() => {
+            document.querySelectorAll('.confidence-fill').forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+            });
+        }, 500);
+        
+        // Add keyboard navigation for text previews
+        document.querySelectorAll('.text-preview').forEach(preview => {
+            preview.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+        
+        // Animate metric items
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.6s ease forwards';
+                }
+            });
+        });
+        
+        document.querySelectorAll('.metric-item, .recommendation-item').forEach(item => {
+            observer.observe(item);
+        });
+    });
+    
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Analysis Results - Multilingual Sentiment Analysis{% endblock %}
+{% block title %}Ensemble Analysis Results - Advanced ML Sentiment Analysis{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -45,6 +45,22 @@
         border: 2px solid transparent;
     }
     
+    .ensemble-info {
+        background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+        border: 1px solid #2196f3;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .model-contribution {
+        background: #f8f9fa;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-radius: 0 8px 8px 0;
+    }
+    
     .processing-info {
         font-size: 0.85rem;
         color: #6c757d;
@@ -80,6 +96,15 @@
         50% { transform: scale(1.02); }
         100% { transform: scale(1); }
     }
+    
+    .ensemble-badge {
+        background: linear-gradient(45deg, #0d6efd, #6610f2);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -89,10 +114,11 @@
     <div class="row mb-4">
         <div class="col">
             <h1 class="mb-2">
-                <i class="bi bi-clipboard-data me-2"></i>Analysis Results
+                <i class="bi bi-clipboard-data me-2"></i>Ensemble Analysis Results
             </h1>
             <p class="lead text-muted">
-                Comprehensive multi-label sentiment and aspect analysis with business intelligence
+                Comprehensive analysis powered by XLM-RoBERTa + Twitter-RoBERTa ensemble 
+                with multi-label classification and business intelligence
             </p>
         </div>
     </div>
@@ -107,15 +133,45 @@
                 <p class="fs-5">"{{ text }}"</p>
             </blockquote>
         </div>
-        {% if result.get('analysis_type') %}
+        
+        <!-- Ensemble Processing Info -->
+        {% if result.get('sentiment_method') %}
             <div class="processing-info">
-                <strong>Analysis Type:</strong> {{ result.analysis_type }}
-                {% if result.get('processing_time') %}
-                    | <strong>Processing Time:</strong> {{ "%.3f"|format(result.processing_time) }} seconds
-                {% endif %}
-                {% if result.get('language') and result.language != 'auto' %}
-                    | <strong>Language:</strong> {{ result.language.upper() }}
-                {% endif %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <strong>Analysis Method:</strong> {{ result.sentiment_method|title|replace('_', ' ') }}
+                        {% if result.get('sentiment_models_used') %}
+                            | <strong>Models Used:</strong> {{ result.sentiment_models_used }}
+                        {% endif %}
+                        {% if result.get('processing_time') %}
+                            | <strong>Processing Time:</strong> {{ "%.0f"|format(result.processing_time * 1000) }}ms
+                        {% endif %}
+                        {% if result.get('language') and result.language != 'auto' %}
+                            | <strong>Language:</strong> {{ result.language.upper() }}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        {% if result.get('sentiment_method') == 'two_model_ensemble' %}
+                            <span class="ensemble-badge">
+                                <i class="bi bi-cpu me-1"></i>Two-Model Ensemble
+                            </span>
+                        {% elif result.get('sentiment_method') == 'rule_based' %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-gear me-1"></i>Rule-Based Fallback
+                            </span>
+                        {% else %}
+                            <span class="badge bg-info">
+                                <i class="bi bi-cpu me-1"></i>{{ result.get('sentiment_method', 'Standard')|title }}
+                            </span>
+                        {% endif %}
+                        
+                        {% if result.get('sentiment_from_cache') %}
+                            <span class="badge bg-success ms-1">
+                                <i class="bi bi-lightning me-1"></i>Cached
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         {% endif %}
     </div>
@@ -123,12 +179,13 @@
     <div class="row">
         <!-- Left Column: Sentiment & Aspects -->
         <div class="col-lg-8">
-            <!-- Sentiment Analysis -->
+            <!-- Ensemble Sentiment Analysis -->
             <div class="result-section">
                 <h4 class="mb-3">
-                    <i class="bi bi-heart-pulse me-2"></i>Sentiment Analysis
+                    <i class="bi bi-cpu me-2"></i>Ensemble Sentiment Analysis
                 </h4>
                 
+                <!-- Main Sentiment Result -->
                 <div class="row align-items-center">
                     <div class="col-md-6">
                         <div class="text-center">
@@ -153,7 +210,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-semibold">Confidence Score</span>
+                                <span class="fw-semibold">Ensemble Confidence</span>
                                 <span class="fw-bold">{{ "%.1f"|format(result.sentiment_confidence * 100) }}%</span>
                             </div>
                             <div class="confidence-bar">
@@ -180,9 +237,48 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <!-- Ensemble Model Contributions (if available) -->
+                {% if result.get('sentiment_method') == 'two_model_ensemble' %}
+                    <div class="ensemble-info">
+                        <h6 class="mb-2">
+                            <i class="bi bi-cpu me-1"></i>Two-Model Ensemble Breakdown
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="model-contribution">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>XLM-RoBERTa</strong>
+                                            <div class="small text-muted">Multilingual Transformer</div>
+                                        </div>
+                                        <span class="badge bg-primary">53.3%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="model-contribution">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Twitter-RoBERTa</strong>
+                                            <div class="small text-muted">Social Media Optimized</div>
+                                        </div>
+                                        <span class="badge bg-info">46.7%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Weighted voting system with automatic fallback mechanisms
+                            </small>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
             
-            <!-- Multi-Label Aspect Classification -->
+            <!-- Enhanced Multi-Label Aspect Classification -->
             <div class="result-section">
                 <h4 class="mb-3">
                     <i class="bi bi-diagram-3 me-2"></i>Multi-Label Aspect Classification
@@ -215,34 +311,51 @@
                     </div>
                 {% endif %}
                 
-                <!-- Classification Type -->
+                <!-- Enhanced Classification Type -->
                 <div class="mb-3">
-                    <h5 class="mb-2">Classification Type</h5>
-                    {% set type_class = 'success' if result.classification_type == 'single_aspect' else 'warning' if result.classification_type == 'dual_aspect' else 'danger' %}
-                    <span class="badge bg-{{ type_class }} classification-{{ result.classification_type }}">
-                        <i class="bi bi-tag me-2"></i>
-                        {{ result.classification_type.replace('_', ' ').title() }}
-                    </span>
+                    <h5 class="mb-2">Classification Analysis</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% set type_class = 'success' if result.classification_type in ['single_aspect', 'focused_praise'] else 'warning' if result.classification_type in ['dual_aspect', 'dual_strengths', 'dual_concerns'] else 'danger' %}
+                            <span class="badge bg-{{ type_class }} classification-{{ result.classification_type }}">
+                                <i class="bi bi-tag me-2"></i>
+                                {{ result.classification_type.replace('_', ' ').title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small">
+                                <strong>Complexity:</strong> 
+                                {% if result.classification_type in ['single_aspect', 'focused_praise', 'single_concern'] %}
+                                    <span class="text-success">Simple</span> - Single focus area
+                                {% elif result.classification_type in ['dual_aspect', 'dual_strengths', 'dual_concerns'] %}
+                                    <span class="text-warning">Moderate</span> - Two main aspects
+                                {% else %}
+                                    <span class="text-danger">Complex</span> - Multiple concerns
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Mixed Concerns Flag -->
-                {% if result.get('mixed_concerns') %}
+                <!-- Mixed Concerns Alert -->
+                {% if result.get('mixed_concerns') or result.classification_type in ['mixed_concerns', 'mixed_feedback'] %}
                     <div class="alert alert-warning d-flex align-items-center" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <div>
-                            <strong>Mixed Concerns Detected:</strong> This review contains multiple different aspects that require coordinated attention.
+                            <strong>Mixed Concerns Detected:</strong> This review contains multiple different aspects 
+                            that require coordinated attention from different teams or departments.
                         </div>
                     </div>
                 {% endif %}
             </div>
         </div>
         
-        <!-- Right Column: Business Intelligence -->
+        <!-- Right Column: Enhanced Business Intelligence -->
         <div class="col-lg-4">
             <!-- Priority & Severity -->
             <div class="result-section">
                 <h5 class="mb-3">
-                    <i class="bi bi-flag me-2"></i>Business Priority
+                    <i class="bi bi-flag me-2"></i>Business Priority Assessment
                 </h5>
                 
                 <!-- Priority Level -->
@@ -266,11 +379,22 @@
                 <!-- Severity Level -->
                 {% if result.get('severity_level') %}
                     <div class="mb-3">
-                        <div class="fw-semibold mb-1">Severity Level</div>
+                        <div class="fw-semibold mb-1">Severity Assessment</div>
                         {% set severity_class = 'danger' if result.severity_level == 'CRITICAL' else 'warning' if result.severity_level == 'HIGH' else 'info' %}
-                        <span class="badge bg-{{ severity_class }}">
-                            {{ result.severity_level }}
-                        </span>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-{{ severity_class }} me-2">
+                                {{ result.severity_level }}
+                            </span>
+                            <small class="text-muted">
+                                {% if result.severity_level == 'CRITICAL' %}
+                                    Requires immediate intervention
+                                {% elif result.severity_level == 'HIGH' %}
+                                    Significant impact on user experience
+                                {% else %}
+                                    Standard operational level
+                                {% endif %}
+                            </small>
+                        </div>
                     </div>
                 {% endif %}
                 
@@ -280,6 +404,7 @@
                         <i class="bi bi-alarm me-2"></i>
                         <div>
                             <strong>Immediate Action Required</strong>
+                            <div class="small">This issue needs urgent attention</div>
                         </div>
                     </div>
                 {% endif %}
@@ -292,35 +417,48 @@
                         <i class="bi bi-person-heart me-2"></i>UX Priority Alert
                     </h5>
                     <p class="small mb-0">
-                        This review has been flagged for <strong>User Experience Priority</strong> - 
-                        issues affecting interface, usability, or user satisfaction.
+                        This review has been flagged for <strong>User Experience Priority (1.5x weighting)</strong> - 
+                        issues affecting interface, usability, or user satisfaction require elevated attention.
                     </p>
                 </div>
             {% endif %}
             
-            <!-- Quick Stats -->
+            <!-- Performance Metrics -->
             <div class="result-section">
                 <h5 class="mb-3">
-                    <i class="bi bi-speedometer2 me-2"></i>Analysis Summary
+                    <i class="bi bi-speedometer2 me-2"></i>Analysis Performance
                 </h5>
                 
                 <div class="small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Analysis Method:</span>
+                        <strong>
+                            {% if result.get('sentiment_method') == 'two_model_ensemble' %}
+                                Two-Model Ensemble
+                            {% elif result.get('sentiment_method') == 'rule_based' %}
+                                Rule-Based Fallback
+                            {% else %}
+                                {{ result.get('sentiment_method', 'Standard')|title }}
+                            {% endif %}
+                        </strong>
+                    </div>
+                    
                     <div class="d-flex justify-content-between mb-2">
                         <span>Aspects Detected:</span>
                         <strong>{{ 1 + (result.secondary_aspects|length if result.secondary_aspects else 0) }}</strong>
                     </div>
                     
-                    {% if result.get('classification_type') %}
+                    {% if result.get('sentiment_models_used') %}
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Classification:</span>
-                            <strong>{{ result.classification_type.replace('_', ' ').title() }}</strong>
+                            <span>Models Used:</span>
+                            <strong>{{ result.sentiment_models_used }}</strong>
                         </div>
                     {% endif %}
                     
-                    {% if result.get('language') and result.language != 'auto' %}
+                    {% if result.get('sentiment_device') %}
                         <div class="d-flex justify-content-between mb-2">
-                            <span>Language:</span>
-                            <strong>{{ result.language.upper() }}</strong>
+                            <span>Processing Device:</span>
+                            <strong>{{ result.sentiment_device }}</strong>
                         </div>
                     {% endif %}
                     
@@ -330,23 +468,30 @@
                             <strong>{{ "%.0f"|format(result.processing_time * 1000) }}ms</strong>
                         </div>
                     {% endif %}
+                    
+                    {% if result.get('sentiment_from_cache') %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Cache Performance:</span>
+                            <strong class="text-success">Hit</strong>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Business Intelligence & Recommendations -->
+    <!-- Enhanced Business Intelligence & Recommendations -->
     <div class="row mt-4">
         <div class="col">
             <div class="result-section">
                 <h4 class="mb-3">
-                    <i class="bi bi-lightbulb me-2"></i>Business Intelligence & Recommendations
+                    <i class="bi bi-lightbulb me-2"></i>Business Intelligence & Automated Recommendations
                 </h4>
                 
                 <!-- Business Summary -->
                 {% if result.get('business_summary') %}
                     <div class="mb-4">
-                        <h5 class="mb-2">Summary</h5>
+                        <h5 class="mb-2">Executive Summary</h5>
                         <div class="bg-light p-3 rounded">
                             <p class="mb-0">{{ result.business_summary }}</p>
                         </div>
@@ -358,41 +503,96 @@
                     <div class="mb-4">
                         <h5 class="mb-2">Primary Recommendation</h5>
                         <div class="recommendation-item {% if result.priority_level == 'HIGH' %}recommendation-critical{% elif result.priority_level == 'MEDIUM' %}recommendation-high{% endif %}">
-                            <i class="bi bi-arrow-right-circle me-2"></i>
-                            {{ result.recommendation }}
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-arrow-right-circle me-2 mt-1"></i>
+                                <div class="flex-grow-1">
+                                    {{ result.recommendation }}
+                                    {% if result.get('severity_level') == 'CRITICAL' %}
+                                        <div class="mt-2">
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-alarm me-1"></i>Critical Priority
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {% endif %}
                 
-                <!-- Additional Insights -->
+                <!-- Enhanced Insights Grid -->
                 <div class="row">
                     {% if result.get('user_experience_priority') %}
                         <div class="col-md-6">
                             <div class="card border-info">
                                 <div class="card-body">
                                     <h6 class="card-title text-info">
-                                        <i class="bi bi-person-check me-2"></i>UX Focus
+                                        <i class="bi bi-person-check me-2"></i>UX Priority Focus
                                     </h6>
                                     <p class="card-text small">
-                                        This review highlights user experience issues that should be prioritized 
-                                        for interface and usability improvements.
+                                        This review highlights user experience issues prioritized at 1.5x weighting. 
+                                        Route to UX team for interface and usability improvements.
                                     </p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-info">1.5x Priority Weight</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     {% endif %}
                     
-                    {% if result.get('mixed_concerns') %}
+                    {% if result.get('mixed_concerns') or result.classification_type in ['mixed_concerns', 'mixed_feedback'] %}
                         <div class="col-md-6">
                             <div class="card border-warning">
                                 <div class="card-body">
                                     <h6 class="card-title text-warning">
-                                        <i class="bi bi-diagram-2 me-2"></i>Complex Issue
+                                        <i class="bi bi-diagram-2 me-2"></i>Complex Multi-Aspect Issue
                                     </h6>
                                     <p class="card-text small">
-                                        Multiple aspects detected - requires coordinated response 
-                                        from different teams or departments.
+                                        Multiple aspects detected requiring coordinated response from different teams. 
+                                        Consider cross-functional approach to resolution.
                                     </p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-warning text-dark">Cross-Team Coordination</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if result.get('sentiment_method') == 'two_model_ensemble' %}
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-cpu me-2"></i>Ensemble Analysis Quality
+                                    </h6>
+                                    <p class="card-text small">
+                                        Analysis powered by two-model ensemble with XLM-RoBERTa and Twitter-RoBERTa 
+                                        for enhanced accuracy and confidence.
+                                    </p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-success">High Confidence</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if result.get('classification_type') in ['single_aspect', 'focused_praise', 'single_concern'] %}
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">
+                                        <i class="bi bi-bullseye me-2"></i>Focused Issue
+                                    </h6>
+                                    <p class="card-text small">
+                                        Single-aspect classification allows for targeted response and 
+                                        specific team assignment for efficient resolution.
+                                    </p>
+                                    <div class="mt-2">
+                                        <span class="badge bg-primary">Targeted Response</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -405,21 +605,35 @@
     <!-- Actions -->
     <div class="row mt-4">
         <div class="col">
-            <div class="d-flex gap-3 justify-content-center">
-                <a href="{{ url_for('analyze_text') }}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left me-2"></i>Analyze Another Text
-                </a>
-                <a href="{{ url_for('upload_file') }}" class="btn btn-success">
-                    <i class="bi bi-cloud-upload me-2"></i>Upload File for Batch Analysis
-                </a>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
-                    <i class="bi bi-graph-up me-2"></i>View Dashboard
-                </a>
-                {% if single_analysis %}
-                    <button class="btn btn-outline-secondary" onclick="exportResult()">
-                        <i class="bi bi-download me-2"></i>Export Result
-                    </button>
-                {% endif %}
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">What would you like to do next?</h5>
+                            <p class="text-muted mb-0">
+                                Continue your analysis journey with our advanced two-model ensemble system
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2 justify-content-md-end">
+                                <a href="{{ url_for('analyze_text') }}" class="btn btn-primary">
+                                    <i class="bi bi-cpu me-2"></i>New Ensemble Analysis
+                                </a>
+                                <a href="{{ url_for('upload_file') }}" class="btn btn-success">
+                                    <i class="bi bi-cloud-upload me-2"></i>Batch Processing
+                                </a>
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                                    <i class="bi bi-graph-up me-2"></i>View Dashboard
+                                </a>
+                                {% if single_analysis %}
+                                    <button class="btn btn-outline-secondary" onclick="exportResult()">
+                                        <i class="bi bi-download me-2"></i>Export
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -441,34 +655,84 @@
                 }, 100);
             });
         }, 200);
+        
+        // Animate ensemble info if present
+        const ensembleInfo = document.querySelector('.ensemble-info');
+        if (ensembleInfo) {
+            ensembleInfo.style.opacity = '0';
+            setTimeout(() => {
+                ensembleInfo.style.transition = 'opacity 0.6s ease';
+                ensembleInfo.style.opacity = '1';
+            }, 500);
+        }
     });
     
-    // Export result function
+    // Export result function with enhanced data
     function exportResult() {
         const resultData = {
             text: "{{ text|replace('"', '\\"') }}",
+            
+            // Enhanced sentiment data
             sentiment: "{{ result.sentiment }}",
             sentiment_confidence: {{ result.sentiment_confidence }},
+            sentiment_method: "{{ result.get('sentiment_method', 'unknown') }}",
+            sentiment_models_used: {{ result.get('sentiment_models_used', 0) }},
+            sentiment_device: "{{ result.get('sentiment_device', 'unknown') }}",
+            sentiment_from_cache: {{ result.get('sentiment_from_cache', false)|tojson }},
+            
+            // Multi-label aspects
             primary_aspect: "{{ result.primary_aspect }}",
             secondary_aspects: {{ result.secondary_aspects|tojson if result.secondary_aspects else '[]' }},
             classification_type: "{{ result.classification_type }}",
+            
+            // Business intelligence
             priority_level: "{{ result.priority_level }}",
             {% if result.get('severity_level') %}severity_level: "{{ result.severity_level }}",{% endif %}
             {% if result.get('business_summary') %}business_summary: "{{ result.business_summary|replace('"', '\\"') }}",{% endif %}
             {% if result.get('recommendation') %}recommendation: "{{ result.recommendation|replace('"', '\\"') }}",{% endif %}
+            
+            // Flags
             requires_immediate_action: {{ result.get('requires_immediate_action', false)|tojson }},
             user_experience_priority: {{ result.get('user_experience_priority', false)|tojson }},
-            mixed_concerns: {{ result.get('mixed_concerns', false)|tojson }}
+            mixed_concerns: {{ result.get('mixed_concerns', false)|tojson }},
+            
+            // Performance metadata
+            processing_time_ms: {{ (result.get('processing_time', 0) * 1000)|round }},
+            analysis_timestamp: "{{ moment().format() if moment else 'N/A' }}",
+            ensemble_powered: {{ (result.get('sentiment_method') == 'two_model_ensemble')|tojson }}
         };
         
-        // Create and download JSON file
+        // Create and download enhanced JSON file
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resultData, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "sentiment_analysis_result.json");
+        downloadAnchorNode.setAttribute("download", "ensemble_analysis_result.json");
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
+        
+        // Show success message
+        showNotification('Enhanced analysis results exported successfully!', 'success');
+    }
+    
+    // Notification system
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px;';
+        notification.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}-fill me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
     }
     
     // Add smooth scrolling to action buttons

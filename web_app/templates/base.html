@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Multilingual Sentiment Analysis{% endblock %}</title>
+    <title>{% block title %}Advanced ML Sentiment Analysis - Two-Model Ensemble{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -19,8 +19,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-chat-text-fill me-2"></i>
-                ML Sentiment Analysis
+                <i class="bi bi-cpu-fill me-2"></i>
+                Advanced ML Sentiment Analysis
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -36,7 +36,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('analyze_text') }}">
-                            <i class="bi bi-search me-1"></i>Analyze Text
+                            <i class="bi bi-search me-1"></i>Text Analysis
                         </a>
                     </li>
                     <li class="nav-item">
@@ -46,7 +46,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="bi bi-graph-up me-1"></i>Dashboard
+                            <i class="bi bi-graph-up me-1"></i>BI Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
@@ -56,16 +56,25 @@
                     </li>
                 </ul>
                 
-                <!-- Model Status Indicator -->
+                <!-- Enhanced Model Status Indicator -->
                 <div class="navbar-nav">
                     {% if model_status and model_status.loaded %}
-                        <span class="nav-status-pill success">
-                            <i class="bi bi-check-circle-fill me-1"></i>Enhanced Models
-                        </span>
+                        <div class="nav-status-pill success" data-bs-toggle="tooltip" 
+                             title="Two-Model Ensemble Active: XLM-RoBERTa (53.3%) + Twitter-RoBERTa (46.7%)">
+                            <i class="bi bi-cpu-fill me-1"></i>
+                            <span class="d-none d-md-inline">Ensemble Active</span>
+                            <span class="d-md-none">Active</span>
+                            {% if model_status.ensemble_info and model_status.ensemble_info.sentiment_details and model_status.ensemble_info.sentiment_details.loaded_models %}
+                                <small class="ms-1">({{ model_status.ensemble_info.sentiment_details.loaded_models }})</small>
+                            {% endif %}
+                        </div>
                     {% else %}
-                        <span class="nav-status-pill warning">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Basic Mode
-                        </span>
+                        <div class="nav-status-pill warning" data-bs-toggle="tooltip" 
+                             title="Enhanced models not loaded - basic analysis available">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            <span class="d-none d-md-inline">Basic Mode</span>
+                            <span class="d-md-none">Basic</span>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -100,30 +109,53 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
+    <!-- Enhanced Footer -->
     <footer class="bg-dark text-light py-4 mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-8">
-                    <h6 class="fw-bold">Multilingual Sentiment Analysis</h6>
+                    <h6 class="fw-bold">Advanced ML Sentiment Analysis System</h6>
                     <p class="text-muted small mb-2">
-                        Advanced ML system with multi-label aspect classification, user experience prioritization, 
-                        and business intelligence generation.
+                        Two-model ensemble architecture with XLM-RoBERTa and Twitter-RoBERTa, 
+                        featuring multi-label aspect classification, automatic FedEx analysis, 
+                        and comprehensive business intelligence generation.
                     </p>
                     <div class="d-flex flex-wrap gap-3 small">
-                        <span><i class="bi bi-globe me-1"></i>5+ Languages</span>
-                        <span><i class="bi bi-cpu me-1"></i>Enhanced ML Pipeline</span>
-                        <span><i class="bi bi-lightning-charge me-1"></i>Real-time Processing</span>
+                        <span><i class="bi bi-translate me-1"></i>5+ Languages</span>
+                        <span><i class="bi bi-cpu me-1"></i>Two-Model Ensemble</span>
+                        <span><i class="bi bi-lightning-charge me-1"></i>GPU Accelerated</span>
                         <span><i class="bi bi-graph-up me-1"></i>Business Intelligence</span>
+                        <span><i class="bi bi-truck me-1"></i>Auto FedEx Analysis</span>
+                        <span><i class="bi bi-diagram-3 me-1"></i>Multi-Label Classification</span>
                     </div>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <p class="small text-muted mb-1">
-                        Eduardo Cabrera - Data Science Portfolio
-                    </p>
-                    <p class="small text-muted">
-                        <i class="bi bi-calendar me-1"></i>August 2025
-                    </p>
+                    <div class="mb-2">
+                        <small class="text-muted">Eduardo Cabrera - ML Portfolio</small>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>August 2025
+                        </small>
+                    </div>
+                    {% if model_status and model_status.loaded %}
+                        <div class="text-success small">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Enhanced Models: {{ model_status.device }}
+                            {% if model_status.ensemble_info and model_status.ensemble_info.sentiment_details %}
+                                {% set ensemble_details = model_status.ensemble_info.sentiment_details %}
+                                {% if ensemble_details.ensemble_enabled %}
+                                    <br><small class="text-muted">
+                                        Ensemble: {{ ensemble_details.loaded_models }} models loaded
+                                    </small>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="text-warning small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Basic Mode Active
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -133,6 +165,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Initialize tooltips -->
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
     
     {% block extra_scripts %}{% endblock %}
 </body>
