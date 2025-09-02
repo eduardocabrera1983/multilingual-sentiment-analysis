@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Enhanced Multi-Label Aspect Classifier - UPDATED for Two-Model Ensemble Integration
-Save as: src/models/enhanced_aspect_classifier.py
 
 INTEGRATION UPDATES:
 - Compatible with new two-model ensemble sentiment classifier

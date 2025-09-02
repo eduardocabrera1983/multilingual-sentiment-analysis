@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhanced Sentiment Classifier - Two-Model Ensemble with Advanced Features
-Maintains XLM-RoBERTa + Twitter-RoBERTa ensemble with restored advanced functionality
+XLM-RoBERTa + Twitter-RoBERTa ensemble with restored advanced functionality
 """
 
 import numpy as np
