@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """
 Integrated Sentiment & Aspect Classification System - UPDATED for Two-Model Ensemble
-Save as: src/models/integrated_classifier.py
-
-Updated to work with the new two-model ensemble sentiment classifier
 """
 
 import pandas as pd
