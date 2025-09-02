@@ -158,7 +158,7 @@ class EnhancedSentimentClassifier:
         loading_strategies = []
         
         if self.device == 'cuda':
-            # Only FP32 strategies (no FP16 as requested)
+            # Only FP32 strategies
             loading_strategies = [
                 ('GPU FP32', lambda: self._load_gpu_fp32(model_id, max_length)),
                 ('CPU', lambda: self._load_cpu(model_id, max_length))
