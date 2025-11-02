@@ -151,7 +151,6 @@ class FedExReviewAnalyzer:
         os.makedirs(data_dir, exist_ok=True)
         
         # FedEx app ID for different app stores (configurable via environment)
-        import os
         self.fedex_app_id = os.environ.get('FEDEX_APP_ID', 'com.fedex.ida.android')
         
         # AUTO-DETECT DEVICE WITH GPU PRIORITY
