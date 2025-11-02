@@ -74,9 +74,28 @@ experiments/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+.env.development
 config.ini
 secrets.json
 api_keys.txt
+*.key
+*.pem
+*.crt
+credentials.json
+.secrets/
+keys/
+auth.json
+
+# Hugging Face Tokens and API Keys
+hf_token.txt
+huggingface_token.txt
+.hf_token
+
+# Allow example/template files (these should be tracked)
+!.env.example
+!.env.template
 
 # IDE Files
 .vscode/

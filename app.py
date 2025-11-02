@@ -18,6 +18,18 @@ from werkzeug.utils import secure_filename
 import pandas as pd
 import numpy as np
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("[SUCCESS] Environment variables loaded from .env file")
+except ImportError:
+    print("[INFO] python-dotenv not installed. Install with: pip install python-dotenv")
+    print("[INFO] Environment variables will be loaded from system environment only")
+except Exception as e:
+    print(f"[WARNING] Could not load .env file: {e}")
+    print("[INFO] Using system environment variables only")
+
 # =====================================================
 # CUSTOM JSON ENCODER - SOLUTION FOR SERIALIZATION
 # =====================================================
@@ -176,15 +188,31 @@ app = Flask(__name__,
 app.json = CustomJSONProvider(app)
 print("[SUCCESS] Custom JSON provider applied to Flask app (handles both API + templates)")
 
-# Configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ml-sentiment-2025')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
-app.config['UPLOAD_FOLDER'] = str(project_root / 'uploads')
-app.config['CACHE_FOLDER'] = str(project_root / 'cache')
-app.config['DATA_FOLDER'] = str(project_root / 'data')
+# Configuration with secure environment variable handling
+def get_secret_key():
+    """Generate or retrieve a secure secret key"""
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        # Generate a random secret key for development
+        import secrets
+        secret_key = secrets.token_hex(32)
+        print(f"[WARNING] No SECRET_KEY found in environment. Generated temporary key.")
+        print(f"[SECURITY] For production, set SECRET_KEY environment variable!")
+    return secret_key
+
+app.config['SECRET_KEY'] = get_secret_key()
+app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_UPLOAD_SIZE_MB', '16')) * 1024 * 1024
+app.config['UPLOAD_FOLDER'] = str(project_root / os.environ.get('UPLOAD_DIR', 'uploads'))
+app.config['CACHE_FOLDER'] = str(project_root / os.environ.get('CACHE_DIR', 'cache'))
+app.config['DATA_FOLDER'] = str(project_root / os.environ.get('DATA_DIR', 'data'))
 
 # Production settings from environment
-app.config['DEBUG'] = os.environ.get('FLASK_ENV', 'development') == 'development'
+app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+
+# CORS and security settings
+app.config['CORS_ORIGINS'] = os.environ.get('CORS_ORIGINS', '*')
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
+app.config['SESSION_COOKIE_HTTPONLY'] = os.environ.get('SESSION_COOKIE_HTTPONLY', 'true').lower() == 'true'
 
 # Create necessary directories
 for folder in ['uploads', 'cache', 'data']:
@@ -1562,8 +1590,9 @@ if __name__ == '__main__':
     print("\nEnvironment Variables:")
     print("  FORCE_CPU=true     - Force CPU mode (for EC2)")
     print("  FORCE_GPU=true     - Force GPU mode")
-    print("  FLASK_ENV=production - Production mode")
-    print("  SECRET_KEY=<key>   - Set secret key")
+    print("  FLASK_DEBUG=true   - Enable debug mode")
+    print("  SECRET_KEY=<key>   - Set secret key (REQUIRED for production)")
+    print("  HF_TOKEN=<token>   - Hugging Face API token (optional)")
     
     print("\nEnhanced Features:")
     print("  • Two-model ensemble sentiment analysis")
