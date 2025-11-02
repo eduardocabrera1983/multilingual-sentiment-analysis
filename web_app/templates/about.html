@@ -10,6 +10,56 @@
         border-radius: 12px;
         overflow: hidden;
         height: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 300px;
+        position: relative;
+    }
+    
+    .feature-card .card-body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.25rem;
+        overflow: hidden;
+    }
+    
+    .feature-card .card-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+    }
+    
+    .feature-card .list-unstyled {
+        flex-grow: 0;
+        margin-bottom: 0.75rem;
+        padding-left: 0;
+        list-style: none;
+        overflow: hidden;
+    }
+    
+    .feature-card .list-unstyled li {
+        margin-bottom: 0.4rem;
+        padding-left: 0;
+        position: relative;
+        overflow: hidden;
+        word-wrap: break-word;
+    }
+    
+    .feature-card .bi-check-circle {
+        display: inline-block;
+        vertical-align: top;
+        margin-right: 0.5rem;
+        flex-shrink: 0;
+    }
+    
+    .feature-card .mt-3 {
+        margin-top: 0.75rem !important;
+        flex-shrink: 0;
+        overflow: hidden;
     }
     
     .feature-card:hover {
@@ -109,13 +159,18 @@
         font-size: 1.5rem;
         margin-right: 0.5rem;
     }
+    
+    .extra-spacing {
+        margin-top: 4rem !important;
+        margin-bottom: 3rem !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container my-5">
     <!-- Header -->
-    <div class="row mb-5">
+    <div class="row mb-6">
         <div class="col">
             <h1 class="mb-3">
                 <i class="bi bi-cpu-fill me-2"></i>Enhanced AI-Powered Analysis Platform
@@ -156,7 +211,7 @@
     </div>
     
     <!-- Two-Model Ensemble Showcase -->
-    <div class="row mb-5">
+    <div class="row mb-5 mt-5 extra-spacing">
         <div class="col">
             <div class="ensemble-demo">
                 <div class="row align-items-center">
@@ -276,7 +331,7 @@
     
     <div class="row g-4 mb-5">
         <!-- Multi-label Classification -->
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
@@ -284,13 +339,15 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">Revolutionary system that detects multiple aspects simultaneously within single reviews.</p>
-                    <ul class="list-unstyled small">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Single-aspect focused feedback</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Dual-aspect competing concerns</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Mixed-concerns complex issues</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Context-aware classification</li>
-                    </ul>
+                    <div class="card-content">
+                        <p class="small">Revolutionary system that detects multiple aspects simultaneously within single reviews.</p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Single-aspect focused feedback</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Dual-aspect competing concerns</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Mixed-concerns complex issues</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Context-aware classification</span></li>
+                        </ul>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-light text-dark">6 Aspect Categories</span>
                         <span class="badge bg-light text-dark">Dynamic Thresholds</span>
@@ -300,7 +357,7 @@
         </div>
         
         <!-- Business Intelligence -->
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
@@ -308,13 +365,15 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">Automated generation of actionable insights and strategic recommendations.</p>
-                    <ul class="list-unstyled small">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Priority level assessment</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Severity classification</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Immediate action flagging</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Strategic recommendations</li>
-                    </ul>
+                    <div class="card-content">
+                        <p class="small">Automated generation of actionable insights and strategic recommendations.</p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Priority level assessment</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Severity classification</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Immediate action flagging</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Strategic recommendations</span></li>
+                        </ul>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-light text-dark">HIGH/MEDIUM/LOW</span>
                         <span class="badge bg-light text-dark">Auto-routing</span>
@@ -324,7 +383,7 @@
         </div>
         
         <!-- Real-time Analysis -->
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-warning text-white">
                     <h5 class="mb-0">
@@ -332,13 +391,15 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">Automated collection and analysis of real-world feedback data from multiple sources.</p>
-                    <ul class="list-unstyled small">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>FedEx reviews (500+ weekly)</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Multi-language coverage</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>7-day data freshness</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Auto-dashboard updates</li>
-                    </ul>
+                    <div class="card-content">
+                        <p class="small">Automated collection and analysis of real-world feedback data from multiple sources.</p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>FedEx reviews (500+ weekly)</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Multi-language coverage</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>7-day data freshness</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Auto-dashboard updates</span></li>
+                        </ul>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-light text-dark">Background Processing</span>
                         <span class="badge bg-light text-dark">Auto-refresh</span>
@@ -348,7 +409,7 @@
         </div>
         
         <!-- UX Prioritization -->
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
@@ -356,13 +417,15 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">Intelligent system that automatically prioritizes user experience issues above other concerns.</p>
-                    <ul class="list-unstyled small">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>1.5x priority weight for UX</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Interface usability detection</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Navigation problem identification</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Business-driven weighting</li>
-                    </ul>
+                    <div class="card-content">
+                        <p class="small">Intelligent system that automatically prioritizes user experience issues above other concerns.</p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>1.5x priority weight for UX</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Interface usability detection</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Navigation problem identification</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Business-driven weighting</span></li>
+                        </ul>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-light text-dark">Smart Weighting</span>
                         <span class="badge bg-light text-dark">Business Logic</span>
@@ -372,7 +435,7 @@
         </div>
         
         <!-- GPU Acceleration -->
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
@@ -380,13 +443,15 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">High-performance computing with automatic GPU detection and memory optimization.</p>
-                    <ul class="list-unstyled small">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>CUDA acceleration support</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Automatic CPU fallback</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Memory management</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Batch optimization</li>
-                    </ul>
+                    <div class="card-content">
+                        <p class="small">High-performance computing with automatic GPU detection and memory optimization.</p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>CUDA acceleration support</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Automatic CPU fallback</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Memory management</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Batch optimization</span></li>
+                        </ul>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-light text-dark">{{ model_status.device if model_status else 'Auto-detect' }}</span>
                         <span class="badge bg-light text-dark">FP32 Precision</span>
@@ -396,7 +461,7 @@
         </div>
         
         <!-- Advanced Analytics -->
-        <div class="col-lg-4 col-md-6">
+        <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-secondary text-white">
                     <h5 class="mb-0">
@@ -404,13 +469,15 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="small">Comprehensive business intelligence dashboard with real-time updates and insights.</p>
-                    <ul class="list-unstyled small">
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Real-time metric updates</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Interactive visualizations</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></i>Trend analysis</li>
-                        <li><i class="bi bi-check-circle text-success me-2"></li>Export capabilities</li>
-                    </ul>
+                    <div class="card-content">
+                        <p class="small">Comprehensive business intelligence dashboard with real-time updates and insights.</p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Real-time metric updates</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Interactive visualizations</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Trend analysis</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Export capabilities</span></li>
+                        </ul>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-light text-dark">Live Updates</span>
                         <span class="badge bg-light text-dark">Plotly Charts</span>
