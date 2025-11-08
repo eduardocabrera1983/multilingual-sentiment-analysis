@@ -4,9 +4,8 @@ services:
   customervoice-ml:
     build: .
     container_name: customervoice-ml-app
-    ports:
-      - "80:5000"
-      - "443:5000"  # For SSL
+    expose:
+      - "5000"
     environment:
       - FLASK_ENV=production
       - FORCE_CPU=true
