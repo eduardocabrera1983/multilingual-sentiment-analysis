@@ -231,37 +231,67 @@ body {
 .status-indicator {
     display: inline-flex;
     align-items: center;
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .status-loaded {
-    background-color: rgba(25, 135, 84, 0.1);
-    color: var(--success-color);
+    background: linear-gradient(135deg, #198754, #20c997);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.status-loaded:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
 }
 
 .status-error {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: var(--danger-color);
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.status-error:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
 .status-loading {
-    background-color: rgba(255, 193, 7, 0.1);
-    color: #856404;
+    background: linear-gradient(135deg, #ffc107, #f39c12);
+    color: #1a1d29;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.status-loading:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
 }
 
 /* Language Badges */
 .language-badge {
-    background-color: rgba(13, 110, 253, 0.1);
-    color: var(--primary-color);
-    padding: 0.3rem 0.8rem;
-    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(102, 16, 242, 0.15));
+    color: #4dabf7;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     margin: 0.2rem;
     display: inline-block;
+    border: 1px solid rgba(77, 171, 247, 0.3);
+    transition: all 0.3s ease;
+}
+
+.language-badge:hover {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.25), rgba(102, 16, 242, 0.25));
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(77, 171, 247, 0.3);
 }
 
 /* Classification Type Badges */
@@ -289,16 +319,81 @@ body {
 
 /* Model Info Display */
 .model-info {
-    background: linear-gradient(135deg, #212529, #343a40);  /* Dark gradient */
-    color: white;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #1a1d29, #2d3748);  /* Enhanced dark gradient */
+    color: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.8rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 
+                0 4px 10px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.model-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #0d6efd, #6610f2, #0dcaf0);
+    border-radius: 15px 15px 0 0;
+}
+
+.model-info h5 {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .model-info .status-indicator.status-loaded {
-    background-color: var(--success-color);
+    background: linear-gradient(135deg, #198754, #20c997);
     color: white;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(25, 135, 84, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.model-info .d-flex.justify-content-between {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.3rem;
+}
+
+.model-info .d-flex.justify-content-between:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.model-info .fw-bold.text-primary {
+    color: #4dabf7 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.model-info .fw-bold.text-info {
+    color: #74c0fc !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.model-info .fw-bold.text-success {
+    color: #51cf66 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.model-info .small.text-muted {
+    color: #ced4da !important;
+}
+
+.model-info .small div {
+    padding: 0.2rem 0;
+    color: #51cf66;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Batch Results Table */
@@ -404,5 +499,49 @@ body {
 .nav-status-pill.warning {
     background: linear-gradient(135deg, #ffc107, #fd7e14);
     color: white;
+}
+
+/* Enhanced Model Info Animations */
+@keyframes checkmarkGlow {
+    0% { 
+        color: #51cf66;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    50% { 
+        color: #69db7c;
+        text-shadow: 0 1px 8px rgba(81, 207, 102, 0.6);
+    }
+    100% { 
+        color: #51cf66;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+}
+
+@keyframes statusPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.model-info .small div {
+    animation: checkmarkGlow 3s ease-in-out infinite;
+}
+
+.model-info .status-indicator.status-loaded {
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+.model-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2), 
+                0 6px 15px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Improved gradient overlay for better text contrast */
+.model-info .fw-bold {
+    background: linear-gradient(135deg, currentColor, rgba(255, 255, 255, 0.9));
+    background-clip: text;
+    -webkit-background-clip: text;
 }
 
