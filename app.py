@@ -1536,7 +1536,8 @@ def inject_globals():
         'gpu_available': GPU_AVAILABLE,
         'force_cpu': FORCE_CPU,
         'ensemble_enabled': ensemble_info.get('sentiment_details', {}).get('ensemble_enabled', False),
-        'ensemble_models_count': ensemble_info.get('sentiment_details', {}).get('loaded_models', 0)
+        'ensemble_models_count': ensemble_info.get('sentiment_details', {}).get('loaded_models', 0),
+        'current_year': datetime.now().year
     }
 
 # --- MAIN EXECUTION ---
