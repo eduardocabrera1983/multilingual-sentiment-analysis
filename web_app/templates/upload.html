@@ -456,7 +456,7 @@
     <div class="row">
         <!-- Enhanced Upload Area -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-lg">
+            <div class="card border-0 shadow-lg mb-4">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Your Data File
@@ -539,23 +539,107 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Enhanced Sample Data Section - Now Horizontal -->
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-table me-2"></i>Sample Data Formats & Examples
+                    </h4>
+                    <small class="opacity-75">Download sample files to test our two-model ensemble system</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Enhanced CSV Example -->
+                        <div class="col-md-6">
+                            <div class="sample-card" onclick="downloadSample('csv')">
+                                <div class="sample-header">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-text text-primary fs-3 me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1">CSV Format</h6>
+                                            <p class="text-muted small mb-0">Recommended for large datasets</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="sample-content">
+                                    <div class="bg-light p-2 rounded small font-monospace mb-2">
+                                        <div class="mb-1"><strong class="text-primary">text,rating,country</strong></div>
+                                        <div class="text-muted">"Great interface...",5,US</div>
+                                        <div class="text-muted">"Love design...",3,ES</div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="small text-success">
+                                            <i class="bi bi-lightning me-1"></i>Fastest processing
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download me-1"></i>Download CSV
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Excel Example -->
+                        <div class="col-md-6">
+                            <div class="sample-card" onclick="downloadSample('excel')">
+                                <div class="sample-header">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-spreadsheet text-success fs-3 me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1">Excel Format</h6>
+                                            <p class="text-muted small mb-0">Rich formatting & multiple sheets</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="sample-content">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-2 small">
+                                            <thead class="table-primary">
+                                                <tr><th>review</th><th>rating</th><th>date</th></tr>
+                                            </thead>
+                                            <tbody class="font-monospace">
+                                                <tr>
+                                                    <td class="text-truncate" style="max-width: 80px;">Interface...</td>
+                                                    <td>3</td><td>2025-08-01</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="small text-info">
+                                            <i class="bi bi-table me-1"></i>Multi-sheet support
+                                        </div>
+                                        <button type="button" class="btn btn-outline-success btn-sm">
+                                            <i class="bi bi-download me-1"></i>Download Excel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <!-- Enhanced Info Panel -->
+        <!-- Enhanced Info Panel - Now More Compact -->
         <div class="col-lg-4">
             <!-- Two-Model Ensemble Info -->
             {% if model_status and model_status.loaded %}
-            <div class="ensemble-info">
+            <div class="ensemble-info mb-3">
                 <div class="position-relative">
-                    <h4 class="mb-3">
+                    <h5 class="mb-2">
                         <i class="bi bi-layers-fill me-2"></i>Two-Model Ensemble Active
-                    </h4>
-                    <p class="mb-3 opacity-90">
-                        Your files will be processed using our advanced ensemble architecture combining 
-                        XLM-RoBERTa and Twitter-RoBERTa models for maximum accuracy.
+                    </h5>
+                    <p class="mb-2 opacity-90 small">
+                        Advanced ensemble combining XLM-RoBERTa and Twitter-RoBERTa for maximum accuracy.
                     </p>
                     
-                    <div class="model-comparison">
+                    <div class="model-comparison mb-2">
                         <div class="model-item">
                             <div class="model-weight">60.0%</div>
                             <div class="small">XLM-RoBERTa</div>
@@ -568,11 +652,11 @@
                         </div>
                     </div>
                     
-                    <div class="text-center mt-3">
-                        <div class="badge bg-light text-dark">
+                    <div class="text-center">
+                        <div class="badge bg-light text-dark me-1">
                             <i class="bi bi-speedometer me-1"></i>95%+ Accuracy
                         </div>
-                        <div class="badge bg-light text-dark ms-2">
+                        <div class="badge bg-light text-dark">
                             <i class="bi bi-gpu-card me-1"></i>{{ model_status.device }}
                         </div>
                     </div>
@@ -581,52 +665,12 @@
             {% endif %}
             
             <!-- File Requirements -->
-            <div class="requirements-card">
-                <h5 class="mb-3">
-                    <i class="bi bi-list-check me-2"></i>File Requirements & Features
-                </h5>
-                
-                <div class="mb-4">
-                    <h6 class="text-success">
-                        <i class="bi bi-check-circle me-2"></i>Supported Formats
-                    </h6>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-file-earmark-text text-primary me-2"></i>
-                                <span class="small">CSV files (.csv)</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>
-                                <span class="small">Excel (.xlsx, .xls)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <h6 class="text-info">
-                        <i class="bi bi-info-circle me-2"></i>Column Detection
-                    </h6>
-                    <div class="small">
-                        <p class="mb-2">
-                            <strong>Required:</strong> One text column with reviews or comments
-                        </p>
-                        <p class="mb-2">
-                            <strong>Auto-detected names:</strong> 'text', 'review', 'comment', 'content', 'message'
-                        </p>
-                        <p class="mb-0 text-muted">
-                            Our AI will automatically identify your text column
-                        </p>
-                    </div>
-                </div>
+            <div class="requirements-card mb-3">
+                <h6 class="mb-2">
+                    <i class="bi bi-list-check me-2"></i>File Requirements
+                </h6>
                 
                 <div class="mb-3">
-                    <h6 class="text-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Limits & Performance
-                    </h6>
                     <div class="small">
                         <div class="d-flex justify-content-between mb-1">
                             <span>Max file size:</span>
@@ -646,49 +690,55 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="mb-2">
+                    <h6 class="text-success small">
+                        <i class="bi bi-check-circle me-2"></i>Supported Formats
+                    </h6>
+                    <div class="row small">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-file-earmark-text text-primary me-1"></i>
+                                <span>CSV (.csv)</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-file-earmark-spreadsheet text-success me-1"></i>
+                                <span>Excel (.xlsx)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Enhanced Analysis Output -->
-            <div class="card mb-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-gift me-2"></i>AI-Enhanced Analysis Output
-                    </h5>
+            <!-- Analysis Output Preview -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white py-2">
+                    <h6 class="mb-0">
+                        <i class="bi bi-gift me-2"></i>AI Analysis Output
+                    </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2">
                     <div class="small">
-                        <div class="mb-3">
-                            <i class="bi bi-plus-circle text-success me-2"></i>
+                        <div class="mb-2">
                             <strong>New Columns Added:</strong>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <ul class="list-unstyled ms-3 small">
-                                    <li class="mb-1">• <strong>Sentiment:</strong> Two-model ensemble</li>
-                                    <li class="mb-1">• <strong>Primary Aspect:</strong> Main concern/praise</li>
-                                    <li class="mb-1">• <strong>Secondary Aspects:</strong> Multi-label detection</li>
-                                    <li class="mb-1">• <strong>Classification Type:</strong> Complexity assessment</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <ul class="list-unstyled small">
-                                    <li class="mb-1">• <strong>Priority Level:</strong> Business importance</li>
-                                    <li class="mb-1">• <strong>Severity Level:</strong> Issue urgency</li>
-                                    <li class="mb-1">• <strong>Recommendation:</strong> AI-generated action</li>
-                                    <li class="mb-1">• <strong>Immediate Action:</strong> Critical flag</li>
-                                </ul>
-                            </div>
-                        </div>
+                        <ul class="list-unstyled ms-2 small">
+                            <li class="mb-1">• <strong>Sentiment:</strong> Two-model ensemble</li>
+                            <li class="mb-1">• <strong>Primary Aspect:</strong> Main concern/praise</li>
+                            <li class="mb-1">• <strong>Secondary Aspects:</strong> Multi-label</li>
+                            <li class="mb-1">• <strong>Priority Level:</strong> Business importance</li>
+                            <li class="mb-1">• <strong>Recommendation:</strong> AI action plan</li>
+                        </ul>
                         
-                        <div class="mt-3 p-2 bg-light rounded">
-                            <i class="bi bi-lightbulb text-warning me-2"></i>
-                            <strong>Business Intelligence Report:</strong>
-                            <ul class="list-unstyled ms-3 small text-muted mt-2">
-                                <li>• Priority distribution analysis & recommendations</li>
-                                <li>• Mixed concerns identification for cross-team coordination</li>
-                                <li>• UX prioritization metrics with 1.5x weighting</li>
-                                <li>• Critical issue flagging with immediate action alerts</li>
-                            </ul>
+                        <div class="p-2 bg-light rounded small">
+                            <i class="bi bi-lightbulb text-warning me-1"></i>
+                            <strong>Business Intelligence:</strong>
+                            <div class="text-muted mt-1">
+                                Priority distribution analysis, mixed concerns identification, 
+                                UX prioritization metrics, and critical issue flagging.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -696,58 +746,48 @@
             
             <!-- Processing Pipeline Info -->
             <div class="card">
-                <div class="card-header">
+            <!-- Processing Pipeline Status - Simplified -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white py-2">
                     <h6 class="mb-0">
-                        <i class="bi bi-cpu me-2"></i>Processing Pipeline Status
+                        <i class="bi bi-cpu me-2"></i>Processing Status
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2">
                     {% if model_status and model_status.loaded %}
-                        <div class="d-flex align-items-center text-success mb-3">
-                            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-                            <strong>Enhanced Pipeline Active</strong>
+                        <div class="d-flex align-items-center text-success mb-2">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <strong class="small">Enhanced Pipeline Active</strong>
                         </div>
                         <div class="small">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-layers text-primary me-2"></i>
-                                <span>Two-Model Ensemble Sentiment Analysis</span>
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-layers text-primary me-1"></i>
+                                <span class="small">Two-Model Ensemble</span>
                             </div>
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-tags text-success me-2"></i>
-                                <span>Multi-Label Aspect Classification</span>
-                            </div>
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-lightbulb text-warning me-2"></i>
-                                <span>AI Business Intelligence Generation</span>
-                            </div>
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-person-heart text-info me-2"></i>
-                                <span>UX-Priority Weighting (1.5x)</span>
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-tags text-success me-1"></i>
+                                <span class="small">Multi-Label Classification</span>
                             </div>
                             <div class="d-flex align-items-center">
-                                <i class="bi bi-speedometer text-danger me-2"></i>
-                                <span>Real-time Dashboard Integration</span>
+                                <i class="bi bi-lightbulb text-warning me-1"></i>
+                                <span class="small">AI Business Intelligence</span>
                             </div>
                         </div>
                         
-                        <div class="mt-3 p-2 bg-primary bg-opacity-10 rounded">
-                            <div class="small text-primary">
-                                <strong>Performance:</strong> 
-                                {{ model_status.device }} • 
-                                95%+ accuracy • 
-                                {{ '50+' if model_status.device == 'GPU' else '15-20' }} texts/sec
-                            </div>
+                        <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded small">
+                            <strong>Performance:</strong> 
+                            {{ model_status.device }} • 95%+ accuracy
                         </div>
                     {% else %}
                         <div class="d-flex align-items-center text-warning mb-2">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <strong>Basic Processing Mode</strong>
+                            <strong class="small">Basic Mode</strong>
                         </div>
                         <div class="small text-muted">
-                            Enhanced models not loaded. Basic sentiment and aspect analysis will be provided.
-                            <div class="mt-2">
-                                <a href="#" onclick="location.reload()" class="text-primary">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh to check model status
+                            Enhanced models not loaded. Basic analysis available.
+                            <div class="mt-1">
+                                <a href="#" onclick="location.reload()" class="text-primary small">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
                                 </a>
                             </div>
                         </div>
@@ -757,147 +797,46 @@
         </div>
     </div>
     
-    <!-- Enhanced Sample Data Section -->
-    <div class="row mt-5">
+    <!-- Pro Tips Section - Now Horizontal Layout -->
+    <div class="row mt-4">
         <div class="col">
-            <h3 class="mb-4">
-                <i class="bi bi-table me-2"></i>Sample Data Formats & Examples
-            </h3>
-            <p class="text-muted mb-4">
-                Here are examples of properly formatted data files. Click on any example to download a sample file 
-                that you can use to test our two-model ensemble system.
-            </p>
-        </div>
-    </div>
-    
-    <div class="row g-4">
-        <!-- Enhanced CSV Example -->
-        <div class="col-md-6">
-            <div class="sample-card" onclick="downloadSample('csv')">
-                <div class="sample-header">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-file-earmark-text text-primary fs-2 me-3"></i>
-                        <div>
-                            <h5 class="mb-1">CSV Format (Recommended)</h5>
-                            <p class="text-muted small mb-0">Comma-separated values with header row</p>
-                        </div>
-                    </div>
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightbulb-fill me-2"></i>Pro Tips for Maximum AI Performance
+                    </h5>
                 </div>
-                
-                <div class="sample-content">
-                    <div class="bg-light p-3 rounded small font-monospace mb-3">
-                        <div class="mb-1"><strong class="text-primary">text,rating,country,language</strong></div>
-                        <div class="text-muted">"Great app interface is easy...",5,US,en</div>
-                        <div class="text-muted">"Tracking is inaccurate often...",2,DE,en</div>
-                        <div class="text-muted">"Love the design but crashes...",3,ES,en</div>
-                        <div class="text-muted">"La interfaz es confusa...",4,ES,es</div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="small">
-                            <div class="text-success mb-1">
-                                <i class="bi bi-check-circle me-1"></i>
-                                <strong>Best for:</strong> Large datasets, simple structure
-                            </div>
-                            <div class="text-info">
-                                <i class="bi bi-lightning me-1"></i>
-                                <strong>Processing:</strong> Fastest analysis speed
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle-fill tip-icon"></i>
+                                <div>
+                                    <strong>Column Naming:</strong> Use clear names like 'text', 'review', 'comment' for automatic detection.
+                                </div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-download me-1"></i>Download CSV
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Enhanced Excel Example -->
-        <div class="col-md-6">
-            <div class="sample-card" onclick="downloadSample('excel')">
-                <div class="sample-header">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-file-earmark-spreadsheet text-success fs-2 me-3"></i>
-                        <div>
-                            <h5 class="mb-1">Excel Format</h5>
-                            <p class="text-muted small mb-0">Spreadsheet with rich formatting and multiple sheets</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="sample-content">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered mb-3 small">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th>review</th>
-                                    <th>rating</th>
-                                    <th>date</th>
-                                    <th>user_id</th>
-                                </tr>
-                            </thead>
-                            <tbody class="font-monospace">
-                                <tr>
-                                    <td class="text-truncate" style="max-width: 120px;">Interface is confusing...</td>
-                                    <td>3</td>
-                                    <td>2025-08-01</td>
-                                    <td>user_001</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-truncate" style="max-width: 120px;">Perfect tracking...</td>
-                                    <td>5</td>
-                                    <td>2025-08-02</td>
-                                    <td>user_002</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="small">
-                            <div class="text-success mb-1">
-                                <i class="bi bi-check-circle me-1"></i>
-                                <strong>Best for:</strong> Complex data with metadata
-                            </div>
-                            <div class="text-info">
-                                <i class="bi bi-table me-1"></i>
-                                <strong>Features:</strong> Multi-sheet support
+                        <div class="col-md-4">
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle-fill tip-icon"></i>
+                                <div>
+                                    <strong>Text Quality:</strong> Ensure entries are at least 10 characters long for accurate analysis.
+                                </div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-outline-success btn-sm">
-                            <i class="bi bi-download me-1"></i>Download Excel
-                        </button>
+                        <div class="col-md-4">
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle-fill tip-icon"></i>
+                                <div>
+                                    <strong>Data Cleaning:</strong> Remove empty rows and duplicates for optimal processing.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Pro Tips Section -->
-    <div class="tips-section">
-        <h4 class="mb-3">
-            <i class="bi bi-lightbulb-fill me-2"></i>Pro Tips for Maximum AI Performance
-        </h4>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill tip-icon"></i>
-                    <div>
-                        <strong>Column Naming:</strong> Use clear names like 'text', 'review', 'comment' for automatic detection by our AI system.
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill tip-icon"></i>
-                    <div>
-                        <strong>Text Quality:</strong> Ensure entries are at least 10 characters long for accurate sentiment analysis by the two-model ensemble.
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill tip-icon"></i>
-                    <div>
-                        <strong>Data Cleaning:</strong> Remove empty rows and duplicate entries for optimal processing efficiency.
-                    </div>
-                </div>
             </div>
             <div class="col-md-6">
                 <div class="tip-item">
