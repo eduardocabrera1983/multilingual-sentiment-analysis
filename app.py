@@ -979,6 +979,107 @@ def about():
                          methodology=methodology,
                          model_status=model_status)
 
+# Excel Template Download Route
+@app.route('/download/excel-template')
+def download_excel_template():
+    """Download Excel template with sample data for batch upload"""
+    try:
+        # Create sample data that matches our expected format
+        sample_data = {
+            'review': [
+                "Interface is confusing but tracking works perfectly and updates in real-time",
+                "Perfect tracking always updated shows correct delivery status", 
+                "App crashes frequently terrible user experience overall needs major improvements",
+                "Great design beautiful interface easy to navigate and very user-friendly",
+                "Mixed concerns about performance but tracking is accurate and reliable",
+                "Outstanding service and app performance exceeds all expectations"
+            ],
+            'rating': [3, 5, 1, 4, 3, 5],
+            'date': [
+                "2025-08-01", "2025-08-02", "2025-08-03", 
+                "2025-08-04", "2025-08-05", "2025-08-06"
+            ],
+            'user_id': [
+                "user_001", "user_002", "user_003", 
+                "user_004", "user_005", "user_006"
+            ],
+            'category': [
+                "mobile_app", "mobile_app", "mobile_app", 
+                "mobile_app", "web_app", "mobile_app"
+            ],
+            'platform': [
+                "ios", "android", "ios", 
+                "android", "desktop", "ios"
+            ]
+        }
+        
+        # Create DataFrame
+        df = pd.DataFrame(sample_data)
+        
+        # Create Excel file in memory
+        from io import BytesIO
+        output = BytesIO()
+        
+        # Use pandas ExcelWriter with openpyxl engine for rich formatting
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Write main data sheet
+            df.to_excel(writer, sheet_name='Sample_Data', index=False)
+            
+            # Create a metadata sheet with instructions
+            metadata = pd.DataFrame({
+                'Column': ['review', 'rating', 'date', 'user_id', 'category', 'platform'],
+                'Description': [
+                    'Text content to analyze (required)',
+                    'Numeric rating 1-5 (optional)',
+                    'Date in YYYY-MM-DD format (optional)',
+                    'Unique user identifier (optional)',
+                    'Category or app type (optional)',
+                    'Platform: ios, android, web, desktop (optional)'
+                ],
+                'Type': ['Text', 'Number', 'Date', 'Text', 'Text', 'Text'],
+                'Required': ['Yes', 'No', 'No', 'No', 'No', 'No']
+            })
+            metadata.to_excel(writer, sheet_name='Instructions', index=False)
+            
+            # Format the worksheets
+            workbook = writer.book
+            
+            # Format Sample_Data sheet
+            ws1 = writer.sheets['Sample_Data']
+            ws1.column_dimensions['A'].width = 60  # Review column wider
+            for col in ['B', 'C', 'D', 'E', 'F']:
+                ws1.column_dimensions[col].width = 15
+            
+            # Format Instructions sheet
+            ws2 = writer.sheets['Instructions']
+            for col in ['A', 'B', 'C', 'D']:
+                ws2.column_dimensions[col].width = 20
+        
+        output.seek(0)
+        
+        return send_file(
+            output,
+            download_name='enhanced_sample_reviews_template.xlsx',
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        print(f"[ERROR] Excel template generation failed: {e}")
+        # Fallback to CSV if Excel generation fails
+        csv_data = "review,rating,date,user_id,category,platform\n"
+        csv_data += '"Interface is confusing but tracking works perfectly",3,2025-08-01,user_001,mobile_app,ios\n'
+        csv_data += '"Perfect tracking always updated shows correct delivery status",5,2025-08-02,user_002,mobile_app,android\n'
+        
+        from io import BytesIO
+        output = BytesIO(csv_data.encode('utf-8'))
+        return send_file(
+            output,
+            download_name='enhanced_sample_reviews_fallback.csv',
+            as_attachment=True,
+            mimetype='text/csv'
+        )
+
 # NEW: API endpoints for dashboard status and data (using safe_jsonify)
 @app.route('/api/dashboard/status')
 def dashboard_status():

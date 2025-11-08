@@ -1323,10 +1323,9 @@
     
     // Enhanced sample file download
     function downloadSample(type) {
-        let sampleData, filename, mimeType;
-        
         if (type === 'csv') {
-            sampleData = `text,rating,country,language,date
+            // Generate CSV data on client side (lightweight)
+            const sampleData = `text,rating,country,language,date
 "Great app interface is easy to use and navigation is intuitive - highly recommend!",5,US,en,2025-08-01
 "Tracking is inaccurate often shows wrong location information and updates are delayed",2,DE,en,2025-08-02
 "Love the design but crashes frequently during use which is very frustrating",3,ES,en,2025-08-03
@@ -1337,34 +1336,24 @@
 "Cette application est fantastique je la recommande vivement à tous mes amis",5,FR,fr,2025-08-08
 "Mixed feelings about this app - good tracking but poor user experience overall",3,CA,en,2025-08-09
 "Het ontwerp is geweldig maar de prestaties zijn teleurstellend en traag",3,NL,nl,2025-08-10`;
-            filename = 'enhanced_sample_reviews.csv';
-            mimeType = 'text/csv';
+            
+            const blob = new Blob([sampleData], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'enhanced_sample_reviews.csv';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Downloaded CSV template - Perfect for testing our two-model ensemble system!', 'success');
         } else {
-            // Excel format sample
-            sampleData = `review,rating,date,user_id,category,platform
-"Interface is confusing but tracking works perfectly and updates in real-time",3,2025-08-01,user_001,mobile_app,ios
-"Perfect tracking always updated shows correct delivery status",5,2025-08-02,user_002,mobile_app,android
-"App crashes frequently terrible user experience overall needs major improvements",1,2025-08-03,user_003,mobile_app,ios
-"Great design beautiful interface easy to navigate and very user-friendly",4,2025-08-04,user_004,mobile_app,android
-"Mixed concerns about performance but tracking is accurate and reliable",3,2025-08-05,user_005,web_app,desktop
-"Outstanding service and app performance exceeds all expectations",5,2025-08-06,user_006,mobile_app,ios`;
-            filename = 'enhanced_sample_reviews_excel_format.csv';
-            mimeType = 'text/csv';
+            // Use backend route for proper Excel file generation
+            window.location.href = '/download/excel-template';
+            showNotification('Downloading Excel template with multiple sheets and proper formatting...', 'success');
         }
-        
-        // Create and trigger download
-        const blob = new Blob([sampleData], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showNotification(`Downloaded ${filename} - Perfect for testing our two-model ensemble system!`, 'success');
     }
     
     // Utility functions
