@@ -364,6 +364,57 @@
         margin-top: 0.2rem;
     }
 
+    .metric-card {
+        transition: all 0.3s ease;
+        min-height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #e9ecef !important;
+        background: #f8f9fa !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        border-color: #007bff !important;
+        background: #ffffff !important;
+    }
+
+    .metric-value {
+        font-weight: bold;
+        font-size: 2rem !important;
+        line-height: 1.1;
+        margin-bottom: 0.5rem !important;
+        display: block;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.3;
+        margin: 0;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.5s;
+    }
+
+    .metric-card:hover::before {
+        left: 100%;
+    }
+
     @media (max-width: 768px) {
         .upload-hero {
             padding: 2rem 0;
@@ -453,10 +504,10 @@
         </div>
     </div>
     
-    <div class="row">
-        <!-- Enhanced Upload Area -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-lg mb-4">
+    <div class="row d-flex align-items-stretch">
+        <!-- Enhanced Upload Area - Back to 8/12 width -->
+        <div class="col-lg-8 d-flex flex-column">
+            <div class="card border-0 shadow-lg mb-4 flex-grow-0">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-file-earmark-arrow-up me-2"></i>Upload Your Data File
@@ -540,15 +591,15 @@
                 </div>
             </div>
             
-            <!-- Enhanced Sample Data Section - Now Horizontal -->
-            <div class="card border-0 shadow-lg">
+            <!-- Enhanced Sample Data Section - Expandable to match right column -->
+            <div class="card border-0 shadow-lg flex-grow-1 d-flex flex-column">
                 <div class="card-header bg-info text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-table me-2"></i>Sample Data Formats & Examples
                     </h4>
                     <small class="opacity-75">Download sample files to test our two-model ensemble system</small>
                 </div>
-                <div class="card-body">
+                <div class="card-body flex-grow-1 d-flex flex-column justify-content-center">
                     <div class="row g-3">
                         <!-- Enhanced CSV Example -->
                         <div class="col-md-6">
@@ -626,11 +677,11 @@
             </div>
         </div>
         
-        <!-- Enhanced Info Panel - Now More Compact -->
-        <div class="col-lg-4">
-            <!-- Two-Model Ensemble Info -->
+        <!-- Enhanced Info Panel - Back to 4/12 width with vertical alignment -->
+        <div class="col-lg-4 d-flex flex-column">
+            <!-- Two-Model Ensemble Info - Fixed height -->
             {% if model_status and model_status.loaded %}
-            <div class="ensemble-info mb-3">
+            <div class="ensemble-info mb-3 flex-grow-0">
                 <div class="position-relative">
                     <h5 class="mb-2">
                         <i class="bi bi-layers-fill me-2"></i>Two-Model Ensemble Active
@@ -664,8 +715,8 @@
             </div>
             {% endif %}
             
-            <!-- File Requirements -->
-            <div class="requirements-card mb-3">
+            <!-- File Requirements - Fixed height -->
+            <div class="requirements-card mb-3 flex-grow-0">
                 <h6 class="mb-2">
                     <i class="bi bi-list-check me-2"></i>File Requirements
                 </h6>
@@ -712,14 +763,14 @@
                 </div>
             </div>
             
-            <!-- Analysis Output Preview -->
-            <div class="card border-0 shadow-sm">
+            <!-- Analysis Output Preview - Expandable -->
+            <div class="card border-0 shadow-sm mb-3 flex-grow-1 d-flex flex-column">
                 <div class="card-header bg-success text-white py-2">
                     <h6 class="mb-0">
                         <i class="bi bi-gift me-2"></i>AI Analysis Output
                     </h6>
                 </div>
-                <div class="card-body p-2">
+                <div class="card-body p-2 flex-grow-1">
                     <div class="small">
                         <div class="mb-2">
                             <strong>New Columns Added:</strong>
@@ -744,10 +795,8 @@
                 </div>
             </div>
             
-            <!-- Processing Pipeline Info -->
-            <div class="card">
-            <!-- Processing Pipeline Status - Simplified -->
-            <div class="card border-0 shadow-sm">
+            <!-- Processing Pipeline Status - Fixed height at bottom -->
+            <div class="card border-0 shadow-sm flex-grow-0">
                 <div class="card-header bg-primary text-white py-2">
                     <h6 class="mb-0">
                         <i class="bi bi-cpu me-2"></i>Processing Status
@@ -807,7 +856,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <div class="tip-item">
                                 <i class="bi bi-check-circle-fill tip-icon"></i>
@@ -833,55 +882,57 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle-fill tip-icon"></i>
+                                <div>
+                                    <strong>Rich Context:</strong> Include additional columns (rating, date, country) for enhanced business intelligence generation.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle-fill tip-icon"></i>
+                                <div>
+                                    <strong>Multilingual:</strong> Mixed language files are fully supported - our XLM-RoBERTa model handles 5+ languages seamlessly.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Metrics - Properly Aligned -->
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3 bg-light rounded border">
+                                <div class="metric-value h4 text-primary mb-2">95%+</div>
+                                <div class="metric-label small text-muted">Ensemble Accuracy</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3 bg-light rounded border">
+                                <div class="metric-value h4 text-success mb-2">5+</div>
+                                <div class="metric-label small text-muted">Languages Supported</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3 bg-light rounded border">
+                                <div class="metric-value h4 text-warning mb-2">16MB</div>
+                                <div class="metric-label small text-muted">Max File Size</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3 bg-light rounded border">
+                                <div class="metric-value h4 text-info mb-2">6+</div>
+                                <div class="metric-label small text-muted">Aspect Categories</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-            </div>
-            <div class="col-md-6">
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill tip-icon"></i>
-                    <div>
-                        <strong>Rich Context:</strong> Include additional columns (rating, date, country) for enhanced business intelligence generation.
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill tip-icon"></i>
-                    <div>
-                        <strong>Multilingual:</strong> Mixed language files are fully supported - our XLM-RoBERTa model handles 5+ languages seamlessly.
-                    </div>
-                </div>
-                <div class="tip-item">
-                    <i class="bi bi-check-circle-fill tip-icon"></i>
-                    <div>
-                        <strong>File Size:</strong> Larger files (up to 16MB) provide richer insights but take longer to process with the ensemble system.
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-3 p-3 bg-white rounded">
-            <div class="row">
-                <div class="col-md-3 text-center mb-2">
-                    <div class="h5 text-primary mb-1">95%+</div>
-                    <div class="small text-muted">Ensemble Accuracy</div>
-                </div>
-                <div class="col-md-3 text-center mb-2">
-                    <div class="h5 text-success mb-1">5</div>
-                    <div class="small text-muted">Languages Supported</div>
-                </div>
-                <div class="col-md-3 text-center mb-2">
-                    <div class="h5 text-warning mb-1">16MB</div>
-                    <div class="small text-muted">Max File Size</div>
-                </div>
-                <div class="col-md-3 text-center mb-2">
-                    <div class="h5 text-info mb-1">6+</div>
-                    <div class="small text-muted">Aspect Categories</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Enhanced Processing Overlay -->
 <div id="processingOverlay" class="processing-overlay">
