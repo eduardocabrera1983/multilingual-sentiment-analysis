@@ -472,32 +472,6 @@ class EnhancedSentimentClassifier:
             'scores': sentiment_scores
         }
     
-    def _advanced_rule_based_analysis(self, text: str) -> Dict:
-        """
-        ADVANCED rule-based sentiment analysis with multilingual support
-        Enhanced fallback when transformer models fail
-        """
-        if not text or not text.strip():
-            return self._neutral_result()
-        
-        text_lower = text.lower()
-        original_text = text
-        
-        # Analyze text features for dynamic thresholding
-        text_features = self._analyze_text_features(text, text_lower)
-        
-        # Get multilingual word lists
-        word_lists = self._get_multilingual_word_lists()
-        
-        # Calculate context-aware scores
-        scores = self._calculate_context_aware_scores(text_lower, word_lists, text_features)
-        
-        # Apply dynamic thresholds
-        thresholds = self._calculate_dynamic_thresholds(text_features)
-        
-        # Determine final sentiment
-        return self._determine_adaptive_sentiment(scores, thresholds, text_features)
-    
     def _analyze_text_features(self, text: str, text_lower: str) -> Dict:
         """Analyze text characteristics for better sentiment detection in multiple languages"""
         multilingual_features = {
