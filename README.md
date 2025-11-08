@@ -1,34 +1,35 @@
-# Multilingual Sentiment Analysis with Advanced Multi-Label Aspect Classification
+# Customer Voice ML - Advanced Sentiment Analysis Platform
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Transformers](https://img.shields.io/badge/🤗-transformers-orange.svg)](https://huggingface.co/transformers/)
 [![License: Portfolio Showcase](https://img.shields.io/badge/License-Portfolio%20Showcase%20Only-red.svg)](https://github.com/eduardocabrera1983/multilingual-sentiment-analysis/blob/main/LICENSE)
 
+> **🌐 Domain**: customervoice-ml.com  
 > **🔗 Repository**: https://github.com/eduardocabrera1983/multilingual-sentiment-analysis  
 > **👁️ Portfolio Showcase**: This repository demonstrates Eduardo Cabrera's ML/AI capabilities - **Viewing Only**
 
-## 🎯 Project Overview
+## 🎯 Transform Customer Feedback into Business Insights
 
-> **📋 PORTFOLIO SHOWCASE**: This project demonstrates advanced machine learning and software engineering capabilities. The repository is provided for **viewing and assessment purposes only** to showcase technical skills in multilingual NLP, transformer models, and production ML systems.
+> **📋 PORTFOLIO SHOWCASE**: Customer Voice ML demonstrates advanced machine learning and software engineering capabilities. This platform showcases technical expertise in multilingual NLP, transformer models, and production ML systems for **business intelligence and customer analytics**.
 
-This project implements a **state-of-the-art multilingual sentiment analysis system** with **innovative multi-label aspect classification** that analyzes customer feedback across multiple languages. The system features **pure multi-label classification** (single_aspect, dual_aspect, mixed_concerns), **user experience prioritization**, and **automated business intelligence generation**, specifically optimized for **FedEx and logistics mobile app reviews**.
+Customer Voice ML is a **state-of-the-art sentiment analysis platform** that transforms customer feedback into actionable business insights. The system features **advanced multi-label aspect classification**, **multilingual support**, and **real-time business intelligence generation**, designed for enterprise customer experience optimization.
 
-### 🌟 Key Innovations
+### 🌟 Platform Capabilities
 
-- **🏆 Multi-Label Aspect Classification**: Revolutionary approach detecting single, dual, and mixed concerns in reviews
-- **🌍 Multilingual Support**: English, Spanish, German, French, Dutch with 100% accuracy in testing
-- **🎯 User Experience Prioritization**: Business-driven weighting system for UX issues
-- **📊 Business Intelligence**: Automated priority levels (HIGH/MEDIUM/LOW) and actionable recommendations
-- **⚡ Two-Model Ensemble**: XLM-RoBERTa (60.0%) + Twitter-RoBERTa (40.0%) optimized ensemble
-- **🚀 Production Performance**: 20+ reviews/second on CPU, processed 1000+ real FedEx reviews
-- **🔧 MLOps Ready**: Complete testing suite, fallback mechanisms, and monitoring
-- **📈 Proven Scale**: Successfully analyzed 1000+ multilingual reviews in production
+- **🏆 Advanced Multi-Label Classification**: Detects single, dual, and mixed customer concerns
+- **🌍 Multilingual Intelligence**: English, Spanish, German, French, Dutch with enterprise accuracy
+- **🎯 Business Prioritization**: Smart weighting system for customer experience optimization
+- **📊 Real-Time Business Intelligence**: Automated insights and actionable recommendations
+- **⚡ Two-Model Ensemble**: XLM-RoBERTa (60.0%) + Twitter-RoBERTa (40.0%) optimized architecture
+- **🚀 Enterprise Performance**: 20+ reviews/second processing, scalable architecture
+- **🔧 Production Ready**: Complete monitoring, fallback mechanisms, and API endpoints
+- **📈 Proven Results**: Successfully processes thousands of customer reviews in production
 
-### 💼 Business Value
+### 💼 Business Impact
 
-- **90.91% system accuracy** in comprehensive testing
-- **100% accuracy** in sentiment and aspect classification tests
-- **Real-time processing** at 20+ texts/second
+- **90.91% platform accuracy** in comprehensive testing
+- **100% accuracy** in sentiment and aspect classification
+- **Enterprise-grade processing** at 20+ texts/second
 - **Automated issue prioritization** reducing manual review by 82%
 - **Mixed concerns detection** identifying complex customer issues
 - **Cross-cultural insights** from 1000+ multilingual reviews

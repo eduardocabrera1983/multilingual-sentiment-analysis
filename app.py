@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Production-Ready Flask App for Multilingual Sentiment Analysis
-UPDATED for Two-Model Ensemble Integration + Auto-FedEx Analysis
-Supports both CPU and GPU with automatic detection and manual override
+Customer Voice ML - Advanced Sentiment Analysis Platform
+Production-ready Flask application with two-model ensemble architecture
+Transform customer feedback into actionable business insights
 """
 
 import os
@@ -1645,8 +1645,8 @@ def inject_globals():
 
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("MULTILINGUAL SENTIMENT ANALYSIS - ENHANCED PRODUCTION APP")
-    print("Two-Model Ensemble Integration + Auto-FedEx Analysis + JSON Fix")
+    print("CUSTOMER VOICE ML - ADVANCED SENTIMENT ANALYSIS PLATFORM")
+    print("Transform Customer Feedback into Actionable Business Insights")
     print("="*70)
     print(f"Project Root: {project_root}")
     print(f"Models Status: {'Loaded' if model_status['loaded'] else 'Not Loaded'}")
@@ -1711,20 +1711,21 @@ if __name__ == '__main__':
         print("     ⚠️  GPU hardware required")
     print("     📊 Both modes: XLM-RoBERTa (60%) + Twitter-RoBERTa (40%)")
     
-    print("\nEnhanced Features:")
-    print("  • Two-model ensemble sentiment analysis")
-    print("  • Automatic FedEx review collection & analysis")
-    print("  • 7-day data freshness with daily monitoring")
-    print("  • Real-time dashboard auto-refresh")
-    print("  • Background processing with threading")
-    print("  • Cache optimization for repeated queries")
-    print("  • CPU/GPU automatic detection & fallback")
-    print("  • Professional loading states")
-    print("  • Enhanced confidence calibration")
-    print("  • FIXED: JSON serialization for all custom objects")
+    print("\nCustomer Voice ML Features:")
+    print("  • Advanced two-model ensemble sentiment analysis")
+    print("  • Transform customer feedback into business insights") 
+    print("  • Multi-language support with intelligent detection")
+    print("  • Real-time business intelligence dashboard")
+    print("  • Professional batch processing capabilities")
+    print("  • Automated aspect classification and prioritization")
+    print("  • CPU/GPU optimization with automatic detection")
+    print("  • Enterprise-grade confidence scoring")
+    print("  • Comprehensive data export and visualization")
+    print("  • Production-ready JSON handling and API endpoints")
     
     print("\n" + "="*70)
-    print("Server starting at http://localhost:5000")
+    print("🌐 Customer Voice ML Server starting at http://localhost:5000")
+    print("💼 Ready to transform customer feedback into business insights")
     print("Press CTRL+C to stop")
     print("="*70 + "\n")
     
