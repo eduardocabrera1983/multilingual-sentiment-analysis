@@ -1,18 +1,51 @@
 version: '3.8'
 
 services:
-  sentiment-app:
+  customervoice-ml:
     build: .
+    container_name: customervoice-ml-app
     ports:
       - "80:5000"
+      - "443:5000"  # For SSL
     environment:
       - FLASK_ENV=production
       - FORCE_CPU=true
+      - DOMAIN=customervoice-ml.com
     volumes:
       - ./uploads:/app/uploads
       - ./cache:/app/.cache
+      - ./data:/app/data
+      - ./logs:/app/logs
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 6G
+          memory: 8G
+          cpus: '2'
+        reservations:
+          memory: 4G
+          cpus: '1'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx reverse proxy for SSL and domain handling
+  nginx:
+    image: nginx:alpine
+    container_name: customervoice-ml-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - customervoice-ml
+    restart: unless-stopped
+
+networks:
+  default:
+    name: customervoice-ml-network
