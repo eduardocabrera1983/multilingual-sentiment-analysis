@@ -153,6 +153,17 @@ class FedExReviewAnalyzer:
         # FedEx app ID for different app stores (configurable via environment)
         self.fedex_app_id = os.environ.get('FEDEX_APP_ID', 'com.fedex.ida.android')
         
+        # Load multilingual scraping configuration
+        countries_str = os.environ.get('SCRAPING_COUNTRIES', 'us,es,de,fr,nl,it,br,mx,ca,au,gb,in')
+        self.scraping_countries = [c.strip().lower() for c in countries_str.split(',')]
+        
+        languages_str = os.environ.get('SCRAPING_LANGUAGES', 'en,es,de,fr,nl,it,pt,hi')
+        self.scraping_languages = [l.strip().lower() for l in languages_str.split(',')]
+        
+        print(f"Multilingual scraping enabled:")
+        print(f"  Countries: {', '.join(self.scraping_countries)}")
+        print(f"  Languages: {', '.join(self.scraping_languages)}")
+        
         # AUTO-DETECT DEVICE WITH GPU PRIORITY
         if device == 'auto':
             self.device = detect_device()
@@ -221,7 +232,7 @@ class FedExReviewAnalyzer:
                     "Tracking is very accurate, always shows correct package location",
                     "Real-time updates are precise and reliable",
                     "Package status updates are always accurate and timely",
-                    "Excellent tracking accuracy, never had wrong information"
+                    "Excellent tracking, never had wrong information"
                 ],
                 'negative': [
                     "Tracking information is often delayed or wrong",
@@ -334,13 +345,13 @@ class FedExReviewAnalyzer:
             }
         }
 
-    def scrape_fedex_reviews_adaptive(self, target_count=1000, countries=['us', 'es', 'de', 'fr', 'nl']):
+    def scrape_fedex_reviews_adaptive(self, target_count=1000, countries=None):
         """
         Scrape REAL FedEx app reviews with improved error handling and rate limiting
         
         Args:
             target_count: Target number of REAL reviews to collect (default: 1000)
-            countries: List of country codes to scrape from
+            countries: List of country codes to scrape from (uses environment config if None)
         
         Returns:
             List of real reviews, sorted by date (most recent first)
@@ -349,6 +360,10 @@ class FedExReviewAnalyzer:
             print("google-play-scraper not available. Cannot get real reviews.")
             print("Install with: pip install google-play-scraper")
             return []
+        
+        # Use environment configuration if countries not provided
+        if countries is None:
+            countries = self.scraping_countries
         
         all_reviews = []
         reviews_by_country = {}
@@ -363,10 +378,21 @@ class FedExReviewAnalyzer:
             try:
                 print(f"\nFetching ALL available reviews from {country.upper()}...")
                 
-                # Language mapping
+                # Extended language mapping for multilingual support
                 lang_map = {
-                    'us': 'en', 'es': 'es', 'de': 'de', 
-                    'fr': 'fr', 'nl': 'nl'
+                    'us': 'en', 'gb': 'en', 'ca': 'en', 'au': 'en', 'in': 'en',
+                    'es': 'es', 'mx': 'es',
+                    'de': 'de', 'at': 'de', 'ch': 'de',
+                    'fr': 'fr',
+                    'be': 'nl',  # Belgium -> Dutch as primary
+                    'nl': 'nl',
+                    'it': 'it',
+                    'br': 'pt', 'pt': 'pt',
+                    'jp': 'ja', 'kr': 'ko',
+                    'cn': 'zh', 'tw': 'zh',
+                    'ru': 'ru', 'pl': 'pl',
+                    'tr': 'tr', 'ar': 'ar',
+                    'hi': 'hi'
                 }
                 lang = lang_map.get(country, 'en')
                 
@@ -791,7 +817,8 @@ class FedExReviewAnalyzer:
         """
         print("Starting Enhanced FedEx Review Analysis with Two-Model Ensemble...")
         print(f"Target app: {self.fedex_app_id}")
-        print("Countries: US, ES, DE, FR, NL")
+        print(f"Countries: {', '.join([c.upper() for c in self.scraping_countries])}")
+        print(f"Languages: {', '.join(self.scraping_languages)}")
         print(f"Enhanced Models: {'ENABLED (Two-Model Ensemble)' if self.use_enhanced_models else 'DISABLED'}")
         print(f"Device: {self.device}")
         

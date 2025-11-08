@@ -228,20 +228,20 @@
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span>XLM-RoBERTa (Multilingual)</span>
-                                <span>53.3%</span>
+                                <span>60.0%</span>
                             </div>
                             <div class="model-weight-bar">
-                                <div class="model-weight-fill bg-light" style="width: 53.3%"></div>
+                                <div class="model-weight-fill bg-light" style="width: 60.0%"></div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span>Twitter-RoBERTa (Social Optimized)</span>
-                                <span>46.7%</span>
+                                <span>40.0%</span>
                             </div>
                             <div class="model-weight-bar">
-                                <div class="model-weight-fill bg-light" style="width: 46.7%"></div>
+                                <div class="model-weight-fill bg-light" style="width: 40.0%"></div>
                             </div>
                         </div>
                         
@@ -434,27 +434,27 @@
             </div>
         </div>
         
-        <!-- GPU Acceleration -->
+        <!-- Hardware Flexibility -->
         <div class="col-lg-4 col-md-6 d-flex">
             <div class="feature-card">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-gpu-card me-2"></i>GPU-Accelerated Processing
+                        <i class="bi bi-cpu me-2"></i>Hardware Flexibility
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="card-content">
-                        <p class="small">High-performance computing with automatic GPU detection and memory optimization.</p>
+                        <p class="small">Full ensemble functionality on both CPU and GPU with automatic hardware detection.</p>
                         <ul class="list-unstyled small">
-                            <li><i class="bi bi-check-circle text-success me-2"></i><span>CUDA acceleration support</span></li>
-                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Automatic CPU fallback</span></li>
-                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Memory management</span></li>
-                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Batch optimization</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>CPU Mode: 18.0 texts/sec</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>GPU Mode: 16.8 texts/sec</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Identical functionality</span></li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i><span>Production-ready both modes</span></li>
                         </ul>
                     </div>
                     <div class="mt-3">
-                        <span class="badge bg-light text-dark">{{ model_status.device if model_status else 'Auto-detect' }}</span>
-                        <span class="badge bg-light text-dark">FP32 Precision</span>
+                        <span class="badge bg-light text-dark">Current: {{ model_status.device if model_status else 'Auto-detect' }}</span>
+                        <span class="badge bg-light text-dark">Ensemble: 60%/40%</span>
                     </div>
                 </div>
             </div>
@@ -664,7 +664,7 @@
                     <li>PyTorch 2.2+</li>
                     <li>Transformers 4.40+</li>
                     <li>Scikit-learn 1.3+</li>
-                    <li>CUDA Acceleration</li>
+                    <li>CPU/GPU Auto-Detection</li>
                 </ul>
             </div>
         </div>
@@ -765,7 +765,7 @@
                                         <li>• Two-model ensemble architecture</li>
                                         <li>• Multi-label classification breakthrough</li>
                                         <li>• Real-time automated data collection</li>
-                                        <li>• GPU-accelerated processing pipeline</li>
+                                        <li>• CPU/GPU flexible processing pipeline</li>
                                         <li>• Advanced confidence calibration</li>
                                     </ul>
                                 </div>

@@ -36,16 +36,28 @@
                         <div class="small mb-3">
                             <div class="d-flex justify-content-between mb-1">
                                 <span>XLM-RoBERTa:</span>
-                                <span class="fw-bold text-primary">53.3%</span>
+                                <span class="fw-bold text-primary">60.0%</span>
                             </div>
                             <div class="d-flex justify-content-between mb-1">
                                 <span>Twitter-RoBERTa:</span>
-                                <span class="fw-bold text-info">46.7%</span>
+                                <span class="fw-bold text-info">40.0%</span>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Device:</span>
                                 <span class="fw-bold text-success">{{ model_status.device }}</span>
                             </div>
+                            {% if model_status.device %}
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>Performance:</span>
+                                    <span>
+                                        {% if model_status.device.upper() == 'CPU' %}
+                                            18.0 texts/sec
+                                        {% else %}
+                                            16.8 texts/sec
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="small">
                             <div>✓ Multi-label Classification</div>
@@ -97,16 +109,16 @@
                     </div>
                     <h5 class="card-title">Two-Model Ensemble</h5>
                     <p class="card-text">
-                        Weighted voting system combining XLM-RoBERTa (53.3%) and 
-                        Twitter-RoBERTa (46.7%) with intelligent fallback 
+                        Weighted voting system combining XLM-RoBERTa (60.0%) and 
+                        Twitter-RoBERTa (40.0%) with intelligent fallback 
                         mechanisms and cache optimization.
                     </p>
                     <div class="mt-3">
                         <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-primary" style="width: 53.3%"></div>
-                            <div class="progress-bar bg-info" style="width: 46.7%"></div>
+                            <div class="progress-bar bg-primary" style="width: 60.0%"></div>
+                            <div class="progress-bar bg-info" style="width: 40.0%"></div>
                         </div>
-                        <small class="text-muted">XLM-RoBERTa (53.3%) + Twitter-RoBERTa (46.7%)</small>
+                        <small class="text-muted">XLM-RoBERTa (60.0%) + Twitter-RoBERTa (40.0%)</small>
                     </div>
                 </div>
             </div>

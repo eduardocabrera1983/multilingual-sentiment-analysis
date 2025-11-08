@@ -548,7 +548,7 @@ class EnhancedAspectClassifier:
             semantic_labels = [
                 "user interface and navigation problems",
                 "app performance and technical issues",
-                "package tracking accuracy problems", 
+                "package tracking problems", 
                 "delivery and shipping issues",
                 "app design and visual appearance",
                 "general satisfaction and experience"
@@ -559,7 +559,7 @@ class EnhancedAspectClassifier:
             label_mapping = {
                 "user interface and navigation problems": "user_experience",
                 "app performance and technical issues": "performance", 
-                "package tracking accuracy problems": "tracking_accuracy",
+                "package tracking problems": "tracking_accuracy",
                 "delivery and shipping issues": "delivery_issues",
                 "app design and visual appearance": "interface_design",
                 "general satisfaction and experience": "general_satisfaction"
@@ -714,7 +714,7 @@ class EnhancedAspectClassifier:
         aspect_names = {
             'user_experience': 'User Experience',
             'performance': 'App Performance',
-            'tracking_accuracy': 'Tracking Accuracy', 
+            'tracking_accuracy': 'Tracking', 
             'delivery_issues': 'Delivery Issues',
             'interface_design': 'Interface Design',
             'general_satisfaction': 'Overall Satisfaction'

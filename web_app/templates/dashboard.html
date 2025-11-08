@@ -295,13 +295,13 @@
         content: '';
         position: absolute;
         top: 50%;
-        left: -10px;
+        left: -15px;
         transform: translateY(-50%);
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
         background: #198754;
         border-radius: 50%;
-        animation: pulse 2s infinite;
+        animation: processingPulse 2s infinite;
     }
     
     .ensemble-info-card {
@@ -447,8 +447,8 @@
             <div class="data-source-card">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h6 class="mb-1 text-primary">
-                            <i class="bi bi-database-fill me-2"></i>Data Source: <span class="real-time-indicator">{{ data.source }}</span>
+                        <h6 class="mb-1 text-primary real-time-indicator">
+                            <i class="bi bi-database-fill me-2"></i>Data Source: <span>{{ data.source }}</span>
                         </h6>
                         <div class="small text-muted">
                             {% if data.file_age %}
@@ -584,17 +584,17 @@
             </div>
         </div>
         
-        <!-- Positive Sentiment -->
+        <!-- Negative Sentiment (Most Critical Metric) -->
         <div class="col-lg-2 col-md-4 col-sm-6">
             <div class="metric-card">
-                <div class="metric-value text-success" id="positiveSentiment" data-target="{{ data.sentiment_distribution.positive if data and data.sentiment_distribution else 0 }}">
+                <div class="metric-value text-danger" id="negativeSentiment" data-target="{{ data.sentiment_distribution.negative if data and data.sentiment_distribution else 0 }}">
                     {% if data and data.sentiment_distribution %}
-                        {{ data.sentiment_distribution.positive }}%
+                        {{ data.sentiment_distribution.negative }}%
                     {% else %}
                         ...
                     {% endif %}
                 </div>
-                <div class="metric-label">Positive</div>
+                <div class="metric-label">Negative</div>
                 <div class="metric-sublabel">Sentiment</div>
             </div>
         </div>
@@ -628,19 +628,19 @@
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small">XLM-RoBERTa (Primary)</span>
-                                        <span class="small fw-bold">53.3%</span>
+                                        <span class="small fw-bold">60.0%</span>
                                     </div>
                                     <div class="confidence-meter">
-                                        <div class="confidence-fill confidence-high" style="width: 53.3%"></div>
+                                        <div class="confidence-fill confidence-high" style="width: 60.0%"></div>
                                     </div>
                                 </div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small">Twitter-RoBERTa (Secondary)</span>
-                                        <span class="small fw-bold">46.7%</span>
+                                        <span class="small fw-bold">40.0%</span>
                                     </div>
                                     <div class="confidence-meter">
-                                        <div class="confidence-fill confidence-medium" style="width: 46.7%"></div>
+                                        <div class="confidence-fill confidence-medium" style="width: 40.0%"></div>
                                     </div>
                                 </div>
                             </div>
@@ -1203,6 +1203,7 @@
         const uxPct = parseFloat(currentData.ux_priority_pct?.replace('%', '')) || 0;
         const highPct = parseFloat(currentData.high_priority_pct?.replace('%', '')) || 0;
         const posPct = currentData.sentiment_distribution?.positive || 0;
+        const negPct = currentData.sentiment_distribution?.negative || 0;
         const ensemblePct = parseFloat(currentData.ensemble_metrics?.ensemble_usage_pct?.replace('%', '')) || 0;
         
         const updates = {
@@ -1210,7 +1211,7 @@
             'mixedConcerns': mixedPct,      // This should show as percentage
             'uxPriority': uxPct,            // This should show as percentage  
             'highPriority': highPct,        // FIXED: This should show as percentage
-            'positiveSentiment': posPct,    // This should show as percentage
+            'negativeSentiment': negPct,    // CHANGED: Show negative sentiment (most critical)
             'ensemblePerformance': ensemblePct  // This should show as percentage
         };
         
@@ -1293,23 +1294,27 @@
             performanceConfidence.style.width = '90%';
         }
         
-        // FIXED STRENGTH ANALYSIS
+        // CRITICAL SENTIMENT ANALYSIS - Focus on Negative (Most Important Business Metric)
         const strengthInsight = document.getElementById('strengthInsight');
         const strengthRecommendation = document.getElementById('strengthRecommendation');
         const strengthConfidence = document.getElementById('strengthConfidence');
         
-        if (posPct > 50) {
-            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment with AI-identified <strong>exceptional strengths</strong> in core functionality and user satisfaction. Strong competitive position.`;
-            strengthRecommendation.textContent = 'LEVERAGE: Amplify these strengths in marketing and product development';
+        if (negPct > 60) {
+            strengthInsight.innerHTML = `<strong>${negPct}%</strong> negative sentiment indicates <strong>critical customer satisfaction issues</strong> requiring immediate attention. This represents a significant business risk.`;
+            strengthRecommendation.textContent = 'URGENT: Implement comprehensive customer satisfaction recovery program';
             strengthConfidence.style.width = '95%';
-        } else if (posPct > 30) {
-            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment shows <strong>moderate performance</strong> with clear opportunities for improvement and growth.`;
-            strengthRecommendation.textContent = 'IMPROVE: Focus on converting neutral feedback to positive experiences';
-            strengthConfidence.style.width = '70%';
+        } else if (negPct > 40) {
+            strengthInsight.innerHTML = `<strong>${negPct}%</strong> negative sentiment shows <strong>substantial dissatisfaction</strong> that needs systematic addressing through targeted improvements.`;
+            strengthRecommendation.textContent = 'PRIORITY: Focus on root cause analysis and systematic issue resolution';
+            strengthConfidence.style.width = '85%';
+        } else if (negPct > 20) {
+            strengthInsight.innerHTML = `<strong>${negPct}%</strong> negative sentiment indicates <strong>manageable issues</strong> that should be addressed to improve overall satisfaction.`;
+            strengthRecommendation.textContent = 'PLANNED: Include customer experience improvements in development roadmap';
+            strengthConfidence.style.width = '75%';
         } else {
-            strengthInsight.innerHTML = `<strong>${posPct}%</strong> positive sentiment indicates <strong>significant improvement opportunities</strong>. AI analysis suggests addressing negative feedback patterns as top priority.`;
-            strengthRecommendation.textContent = 'URGENT: Implement comprehensive customer satisfaction improvement program';
-            strengthConfidence.style.width = '80%';
+            strengthInsight.innerHTML = `<strong>${negPct}%</strong> negative sentiment shows <strong>excellent customer satisfaction</strong> with minimal negative feedback patterns.`;
+            strengthRecommendation.textContent = 'MAINTAIN: Continue current practices while monitoring for emerging issues';
+            strengthConfidence.style.width = '90%';
         }
         
         // Update AI-prioritized action items with CORRECT data
@@ -1363,14 +1368,32 @@
             });
         }
         
-        if (posPct < 25) {
+        if (negPct > 60) {
+            actions.push({
+                priority: 'high',
+                icon: 'exclamation-triangle-fill',
+                title: 'CRITICAL: Customer Satisfaction Crisis',
+                desc: `${Math.round(currentData.total_reviews * negPct / 100)} negative reviews indicate severe satisfaction issues`,
+                confidence: '95%',
+                timeframe: 'Immediate Action Required'
+            });
+        } else if (negPct > 40) {
             actions.push({
                 priority: 'high',
                 icon: 'arrow-up-circle',
                 title: 'Customer Satisfaction Focus',
-                desc: 'Significant opportunity to improve customer sentiment through targeted initiatives',
-                confidence: '80%',
-                timeframe: 'Immediate Focus (ongoing)'
+                desc: `${Math.round(currentData.total_reviews * negPct / 100)} negative reviews require systematic improvement initiatives`,
+                confidence: '85%',
+                timeframe: 'High Priority (1-2 weeks)'
+            });
+        } else if (negPct > 20) {
+            actions.push({
+                priority: 'medium',
+                icon: 'graph-up',
+                title: 'Customer Experience Optimization',
+                desc: `${Math.round(currentData.total_reviews * negPct / 100)} negative reviews present improvement opportunities`,
+                confidence: '75%',
+                timeframe: 'Planned Improvements (1 month)'
             });
         }
         
@@ -1447,7 +1470,7 @@
                 
             aspects: currentData.aspect_distribution && Object.keys(currentData.aspect_distribution).length > 0
                 ? currentData.aspect_distribution
-                : {"user_experience": 35, "delivery_issues": 25, "performance": 20, "general_satisfaction": 15, "tracking_accuracy": 5},
+                : {"user_experience": 35, "delivery_issues": 25, "performance": 20, "general_satisfaction": 15, "tracking": 5},
                 
             priorities: currentData.priority_levels && Object.keys(currentData.priority_levels).length > 0
                 ? currentData.priority_levels
@@ -1564,9 +1587,18 @@
         
         Plotly.newPlot('sentimentChart', sentimentData, sentimentLayout, chartConfig);
         
-        // ASPECT CHART - FIXED
+        // ASPECT CHART - FIXED WITH PROPER LABEL MAPPING
+        const aspectLabelMapping = {
+            'user_experience': 'User Experience',
+            'performance': 'App Performance', 
+            'tracking_accuracy': 'Tracking',
+            'delivery_issues': 'Delivery Issues',
+            'interface_design': 'Interface Design',
+            'general_satisfaction': 'Overall Satisfaction'
+        };
+        
         const aspectLabels = Object.keys(dashboardData.aspects).map(k => 
-            k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            aspectLabelMapping[k] || k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
         );
         const aspectValues = Object.values(dashboardData.aspects);
         
@@ -1760,7 +1792,7 @@
             fetch('/api/fedex/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target_reviews: 500 })
+                body: JSON.stringify({ target_reviews: 1000 })
             })
             .then(response => response.json())
             .then(result => {

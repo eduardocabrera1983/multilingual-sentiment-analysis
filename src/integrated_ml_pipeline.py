@@ -687,7 +687,7 @@ if __name__ == "__main__":
     # Test with your FedEx sample
     test_texts = [
         "not receiving email for sign in, this app continues to be trash!",
-        "Love the tracking accuracy but the interface is confusing",
+        "Love the tracking but the interface is confusing",
         "App crashes constantly when trying to track packages",
         "Great delivery notifications but app design is ugly and hard to navigate"
     ]
