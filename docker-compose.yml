@@ -41,6 +41,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/lib/letsencrypt:/var/lib/letsencrypt:ro
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - customervoice-ml
